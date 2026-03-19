@@ -20,7 +20,7 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
-import express from "express";
+import express, { Request, Response, NextFunction } from "express";
 
 // Tool registrations
 import { registerKentekenZoeken } from "./tools/rdw-kenteken.js";
@@ -29,6 +29,11 @@ import { registerApkStatus } from "./tools/rdw-apk.js";
 import { registerTerugroepActies } from "./tools/rdw-recalls.js";
 import { registerMerkZoeken } from "./tools/rdw-merk.js";
 import { registerSlimZoeken } from "./tools/rdw-slim-zoeken.js";
+
+// Auth & onboarding
+import { initDb, validateApiKey } from "./db.js";
+import { oauthRouter } from "./oauth.js";
+import { landingRouter } from "./landing.js";
 
 // ---------- Create server ----------
 
@@ -57,11 +62,15 @@ async function runStdio(): Promise<void> {
 // ---------- Transport: Streamable HTTP ----------
 
 async function runHTTP(): Promise<void> {
+  // Initialize user database
+  initDb();
+
   const app = express();
   app.use(express.json());
+  app.use(express.urlencoded({ extended: true }));
 
   // CORS — allow any MCP client to connect
-  app.use((_req, res, next) => {
+  app.use((_req: Request, res: Response, next: NextFunction) => {
     res.header("Access-Control-Allow-Origin", "*");
     res.header("Access-Control-Allow-Methods", "GET, POST, DELETE, OPTIONS");
     res.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
@@ -73,13 +82,13 @@ async function runHTTP(): Promise<void> {
   });
 
   // Request logging
-  app.use((req, _res, next) => {
+  app.use((req: Request, _res: Response, next: NextFunction) => {
     console.error(`[${new Date().toISOString()}] ${req.method} ${req.path}`);
     next();
   });
 
-  // Health check
-  app.get("/health", (_req, res) => {
+  // Health check (no auth required)
+  app.get("/health", (_req: Request, res: Response) => {
     res.json({
       status: "ok",
       server: "rdw-mcp-server",
@@ -97,28 +106,32 @@ async function runHTTP(): Promise<void> {
     });
   });
 
-  // Landing page — so people know what this server does
-  app.get("/", (_req, res) => {
-    res.json({
-      name: "RDW MCP Server",
-      description: "MCP server for Dutch vehicle registration data (RDW open data)",
-      version: "1.0.0",
-      mcp_endpoint: "/mcp",
-      health_endpoint: "/health",
-      documentation: "https://github.com/YOUR_USERNAME/rdw-mcp-server",
-      tools: {
-        rdw_kenteken_zoeken: "Look up a vehicle by license plate",
-        rdw_voertuig_details: "Full vehicle details from multiple datasets",
-        rdw_apk_status: "Check APK (MOT) inspection status",
-        rdw_terugroep_acties: "Search recall actions by brand or plate",
-        rdw_merk_zoeken: "Search vehicles by brand with filters",
-        rdw_slim_zoeken: "Natural language smart search",
-      },
-    });
+  // Landing / onboarding page + signup (no auth required)
+  app.use(landingRouter());
+
+  // OAuth 2.0 endpoints (no auth required)
+  app.use(oauthRouter());
+
+  // ---------- Bearer token auth middleware for /mcp ----------
+
+  app.use("/mcp", (req: Request, res: Response, next: NextFunction) => {
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      res.status(401).json({ error: "Missing or malformed Authorization header. Use: Bearer <api_key>" });
+      return;
+    }
+
+    const token = authHeader.slice(7);
+    if (!validateApiKey(token)) {
+      res.status(401).json({ error: "Invalid API key" });
+      return;
+    }
+
+    next();
   });
 
   // MCP endpoint — stateless JSON mode
-  app.post("/mcp", async (req, res) => {
+  app.post("/mcp", async (req: Request, res: Response) => {
     try {
       const transport = new StreamableHTTPServerTransport({
         sessionIdGenerator: undefined,
@@ -138,18 +151,19 @@ async function runHTTP(): Promise<void> {
   });
 
   // Handle GET and DELETE on /mcp for protocol compliance
-  app.get("/mcp", (_req, res) => {
+  app.get("/mcp", (_req: Request, res: Response) => {
     res.status(405).json({ error: "Method not allowed. Use POST for MCP requests." });
   });
 
-  app.delete("/mcp", (_req, res) => {
+  app.delete("/mcp", (_req: Request, res: Response) => {
     res.status(405).json({ error: "Method not allowed. Use POST for MCP requests." });
   });
 
-  const port = parseInt(process.env.PORT || "3000", 10);
-  app.listen(port, () => {
-    console.error(`RDW MCP Server running on http://localhost:${port}/mcp`);
-    console.error(`Health check: http://localhost:${port}/health`);
+  const port = parseInt(process.env.PORT || "8000", 10);
+  app.listen(port, "0.0.0.0", () => {
+    console.error(`RDW MCP Server running on http://0.0.0.0:${port}/mcp`);
+    console.error(`Health check: http://0.0.0.0:${port}/health`);
+    console.error(`Onboarding:  http://0.0.0.0:${port}/`);
   });
 }
 

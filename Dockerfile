@@ -19,15 +19,19 @@ RUN npm install --omit=dev
 
 COPY --from=builder /app/dist ./dist
 
+# Create data directory for SQLite
+RUN mkdir -p /app/data && chown mcp:mcp /app/data
+
 # Default to HTTP transport for hosted deployment
 ENV TRANSPORT=http
-ENV PORT=3000
+ENV PORT=8000
+ENV DB_PATH=./data/users.db
 ENV NODE_ENV=production
 
-EXPOSE 3000
+EXPOSE 8000
 
 HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
-  CMD wget -qO- http://localhost:3000/health || exit 1
+  CMD wget -qO- http://localhost:8000/health || exit 1
 
 USER mcp
 CMD ["node", "dist/index.js", "--http"]
