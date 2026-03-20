@@ -120,6 +120,10 @@ async function runHTTP(): Promise<void> {
   const issuerUrl = new URL(`${protocol}://${domain}`);
   const mcpServerUrl = new URL(`${protocol}://${domain}/mcp`);
 
+  console.error(`[oauth] Issuer URL:  ${issuerUrl.toString()}`);
+  console.error(`[oauth] Resource URL: ${mcpServerUrl.toString()}`);
+  console.error(`[oauth] RAILWAY_PUBLIC_DOMAIN = ${process.env.RAILWAY_PUBLIC_DOMAIN ?? "(not set)"}`);
+
   // Mount SDK auth router: handles /.well-known/oauth-authorization-server,
   // /.well-known/oauth-protected-resource, /register, /authorize, /token, /revoke
   app.use(mcpAuthRouter({
@@ -229,6 +233,15 @@ async function runHTTP(): Promise<void> {
       return;
     }
     const session = sessions.get(sessionId)!;
+
+    // Keep-alive: prevent reverse proxies (Railway, Render) from killing idle SSE
+    const keepAlive = setInterval(() => {
+      if (!res.writableEnded) {
+        res.write(":keep-alive\n\n");
+      }
+    }, 25_000);
+    res.on("close", () => clearInterval(keepAlive));
+
     await session.transport.handleRequest(req, res);
   });
 

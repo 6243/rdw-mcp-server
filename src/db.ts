@@ -14,7 +14,14 @@ let db: Database.Database;
 export function initDb(): void {
   mkdirSync(dirname(DB_PATH), { recursive: true });
 
-  db = new Database(DB_PATH);
+  try {
+    db = new Database(DB_PATH);
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error(`[db] Failed to open database at ${DB_PATH}: ${msg}`);
+    console.error(`[db] Hint: ensure the volume is mounted and writable (chown to current uid).`);
+    throw err;
+  }
   db.pragma("journal_mode = WAL");
 
   db.exec(`
