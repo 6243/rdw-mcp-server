@@ -193,7 +193,7 @@ function landingPage(): string {
     </div>
     <div class="bg-surface-container-lowest p-8 rounded-xl shadow-sm border border-outline-variant/15 flex flex-col items-start hover:translate-y-[-4px] transition-transform">
       <div class="w-12 h-12 bg-tertiary-fixed rounded-lg flex items-center justify-center mb-6">
-        <span class="material-symbols-outlined text-tertiary text-3xl">fleet_management</span>
+        <span class="material-symbols-outlined text-tertiary text-3xl">local_shipping</span>
       </div>
       <h3 class="font-headline text-xl font-bold mb-3">Wagenpark &amp; Milieuzone-analyse</h3>
       <p class="text-on-surface-variant text-sm leading-relaxed mb-6">Laat je AI in &eacute;&eacute;n prompt controleren of voertuigen voldoen aan emissie-eisen (zero-emissiezones), wanneer de APK verloopt, en identificeer risicovoertuigen in je vloot.</p>
@@ -348,133 +348,129 @@ function setupClaudeDesktop(): string {
   const protocol = domain.startsWith("localhost") ? "http" : "https";
   const mcpUrl = `${protocol}://${domain}/mcp`;
 
-  return page("Claude Desktop instellen — RDW MCP", `
-  <a href="/" class="back-link">&larr; Terug naar overzicht</a>
-  <h1>Claude Desktop instellen</h1>
-  <p class="page-sub">In 4 stappen heb je toegang tot RDW voertuigdata vanuit Claude Desktop. Er wordt automatisch ingelogd via je browser — geen API key nodig.</p>
+  const configJson = JSON.stringify({
+    mcpServers: {
+      rdw: {
+        command: "npx",
+        args: ["-y", "mcp-remote", mcpUrl]
+      }
+    }
+  }, null, 2);
 
-  <div class="steps">
-    <div class="step">
-      <span class="step-num">1</span>
-      <div>
-        <strong>Installeer Node.js</strong>
-        <p>Download de <strong>LTS-versie</strong> van <a href="https://nodejs.org" target="_blank">nodejs.org</a> en installeer deze. <strong>Herstart je computer</strong> na de installatie.</p>
-        <div class="info-box">Heb je Node.js al? Dan kun je deze stap overslaan.</div>
+  return setupPageShell("Claude Desktop Integratie | RDW Voertuigdata", "claude-desktop", `
+<!-- Hero Section -->
+<section class="relative overflow-hidden rounded-3xl bg-hero-gradient p-10 md:p-14 flex flex-col md:flex-row items-center justify-between gap-12">
+  <div class="relative z-10 space-y-6 max-w-xl">
+    <div class="inline-flex items-center gap-2 px-3 py-1 bg-white/10 backdrop-blur-md border border-white/20 rounded-full text-white text-[10px] font-bold tracking-wider uppercase">
+      <span class="material-symbols-outlined text-[14px]" style="font-variation-settings: 'FILL' 1;">verified</span>
+      OFFICIAL RDW INTEGRATION
+    </div>
+    <h1 class="font-headline text-4xl md:text-6xl font-black text-white leading-tight tracking-tight">Connect to Claude Desktop</h1>
+    <p class="text-primary-fixed-dim/90 text-lg leading-relaxed font-medium">
+      Seamlessly query RDW vehicle data directly from your Claude interface. Analyze license plates, technical specs, and APK statuses with natural language.
+    </p>
+  </div>
+  <div class="relative shrink-0">
+    <div class="absolute inset-0 bg-white/20 blur-[80px] rounded-full scale-150"></div>
+    <div class="relative bg-white p-10 rounded-[2rem] shadow-2xl">
+      <span class="material-symbols-outlined text-primary text-7xl" style="font-variation-settings: 'FILL' 1;">desktop_windows</span>
+    </div>
+  </div>
+</section>
+
+<!-- Configuration Bento Grid -->
+<section class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+  <div class="lg:col-span-2 bg-surface-container-lowest p-8 md:p-10 rounded-3xl border border-outline-variant/30 flex flex-col justify-between space-y-10">
+    <div>
+      <div class="flex justify-between items-start mb-2">
+        <h2 class="font-headline text-2xl font-black text-on-surface">Technical Setup</h2>
+        <button onclick="navigator.clipboard.writeText(document.getElementById('config-json').innerText)" class="bg-primary text-white px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 active:scale-95 transition-transform">
+          <span class="material-symbols-outlined text-sm">content_copy</span>
+          Copy Config
+        </button>
+      </div>
+      <p class="text-on-surface-variant font-medium">Add the following snippet to your <code class="bg-surface-container-high px-2 py-1 rounded text-primary font-mono text-sm">claude_desktop_config.json</code> file:</p>
+    </div>
+    <div class="space-y-4">
+      <div id="config-json" class="bg-on-background rounded-xl p-6 overflow-x-auto font-mono text-sm text-surface-variant leading-relaxed">
+        <pre>${escapeHtml(configJson)}</pre>
       </div>
     </div>
-    <div class="step">
-      <span class="step-num">2</span>
+    <div class="p-4 bg-surface-container-low rounded-lg border border-outline-variant/10 flex items-center gap-4">
+      <span class="material-symbols-outlined text-primary">info</span>
       <div>
-        <strong>Open de Claude Desktop instellingen</strong>
-        <p>Open Claude Desktop en ga naar:</p>
-        <p><strong>Settings</strong> &rarr; <strong>Developer</strong> &rarr; <strong>Edit Config</strong></p>
-        <p>Er opent een bestand genaamd <code>claude_desktop_config.json</code>. <strong>Kopieer de volledige inhoud</strong> van dat bestand.</p>
-      </div>
-    </div>
-    <div class="step">
-      <span class="step-num">3</span>
-      <div>
-        <strong>Voeg de RDW server toe</strong>
-        <p>Plak hieronder de inhoud van je config-bestand. Wij voegen de RDW server er automatisch aan toe.</p>
-
-        <div class="config-tool">
-          <div class="os-toggle">
-            <button type="button" class="os-btn active" onclick="setOS('windows')">Windows</button>
-            <button type="button" class="os-btn" onclick="setOS('mac')">Mac / Linux</button>
-          </div>
-
-          <label for="config-input">Plak hier je huidige config (mag ook leeg zijn):</label>
-          <textarea id="config-input" rows="8" placeholder="Plak hier de inhoud van claude_desktop_config.json..."></textarea>
-          <button type="button" class="btn full" onclick="mergeConfig()">Voeg RDW toe</button>
-
-          <div id="config-error" class="error" style="display:none"></div>
-
-          <div id="config-result" style="display:none">
-            <label>Klaar! Kopieer dit en plak het terug in je config-bestand:</label>
-            <div class="code-box copyable" id="config-output" onclick="copyText(this)" title="Klik om te kopiëren"></div>
-            <div class="info-box">De RDW server is toegevoegd. Al je bestaande instellingen blijven behouden.</div>
-          </div>
-        </div>
-      </div>
-    </div>
-    <div class="step">
-      <span class="step-num">4</span>
-      <div>
-        <strong>Herstart Claude Desktop</strong>
-        <p>Sluit Claude Desktop volledig af (rechtermuisknop op het icoon in de taakbalk &rarr; <strong>Quit</strong>) en open het opnieuw.</p>
-        <p>Je browser opent automatisch een inlogpagina — vul je e-mailadres in en je bent klaar!</p>
+        <p class="text-[9px] font-black uppercase tracking-widest text-outline mb-1">Path</p>
+        <span class="text-on-surface text-xs font-bold">%AppData%\Roaming\Anthropic\Claude\claude_desktop_config.json</span>
       </div>
     </div>
   </div>
-
-  <div class="try-section">
-    <h2>Probeer het uit!</h2>
-    <p>Stel Claude een vraag zoals:</p>
-    <ul class="examples">
-      <li>&ldquo;Wat voor auto is <strong>AB-123-C</strong>?&rdquo;</li>
-      <li>&ldquo;Is de APK van kenteken <strong>12-ABC-3</strong> nog geldig?&rdquo;</li>
-      <li>&ldquo;Zijn er terugroepacties voor mijn auto?&rdquo;</li>
-      <li>&ldquo;Zoek alle Tesla&apos;s in de RDW database&rdquo;</li>
+  <div class="bg-surface-container-low p-8 md:p-10 rounded-3xl border border-outline-variant/30 space-y-8">
+    <h3 class="font-headline text-xl font-black text-on-surface">Key Benefits</h3>
+    <ul class="space-y-6">
+      <li class="flex gap-4">
+        <div class="bg-tertiary/10 text-tertiary p-2 rounded-lg h-fit">
+          <span class="material-symbols-outlined text-xl">bolt</span>
+        </div>
+        <div>
+          <h4 class="font-bold text-sm text-on-surface mb-0.5">Real-time Data</h4>
+          <p class="text-xs text-on-surface-variant leading-relaxed">Fetch the latest APK, technical specs, and ownership data directly.</p>
+        </div>
+      </li>
+      <li class="flex gap-4">
+        <div class="bg-primary/10 text-primary p-2 rounded-lg h-fit">
+          <span class="material-symbols-outlined text-xl">chat_bubble</span>
+        </div>
+        <div>
+          <h4 class="font-bold text-sm text-on-surface mb-0.5">Natural Queries</h4>
+          <p class="text-xs text-on-surface-variant leading-relaxed">Ask &ldquo;Which SUVs in this set are diesel?&rdquo; and get instant answers.</p>
+        </div>
+      </li>
+      <li class="flex gap-4">
+        <div class="bg-secondary/10 text-secondary p-2 rounded-lg h-fit">
+          <span class="material-symbols-outlined text-xl">shield</span>
+        </div>
+        <div>
+          <h4 class="font-bold text-sm text-on-surface mb-0.5">Secure &amp; Private</h4>
+          <p class="text-xs text-on-surface-variant leading-relaxed">OAuth 2.0 authentication via your browser. No API keys needed.</p>
+        </div>
+      </li>
     </ul>
   </div>
+</section>
 
-  <script>
-    var currentOS = 'windows';
-    var mcpUrl = '${mcpUrl}';
-
-    function setOS(os) {
-      currentOS = os;
-      document.querySelectorAll('.os-btn').forEach(function(b) { b.classList.remove('active'); });
-      document.querySelector('.os-btn' + (os === 'windows' ? ':first-child' : ':last-child')).classList.add('active');
-      // Re-run merge if there's already a result showing
-      if (document.getElementById('config-result').style.display !== 'none') {
-        mergeConfig();
-      }
-    }
-
-    function mergeConfig() {
-      var input = document.getElementById('config-input').value.trim();
-      var errorEl = document.getElementById('config-error');
-      var resultEl = document.getElementById('config-result');
-      var outputEl = document.getElementById('config-output');
-
-      errorEl.style.display = 'none';
-      resultEl.style.display = 'none';
-
-      var config;
-      if (!input || input === '') {
-        config = {};
-      } else {
-        try {
-          config = JSON.parse(input);
-        } catch (e) {
-          errorEl.textContent = 'Dit is geen geldige JSON. Kopieer de volledige inhoud van je config-bestand en probeer opnieuw.';
-          errorEl.style.display = 'block';
-          return;
-        }
-      }
-
-      if (typeof config !== 'object' || Array.isArray(config)) {
-        errorEl.textContent = 'De config moet een JSON object zijn (begint met { en eindigt met }).';
-        errorEl.style.display = 'block';
-        return;
-      }
-
-      // Ensure mcpServers exists
-      if (!config.mcpServers || typeof config.mcpServers !== 'object') {
-        config.mcpServers = {};
-      }
-
-      // Add rdw server
-      config.mcpServers.rdw = {
-        command: currentOS === 'windows' ? 'npx.cmd' : 'npx',
-        args: ['-y', 'mcp-remote', mcpUrl]
-      };
-
-      outputEl.textContent = JSON.stringify(config, null, 2);
-      resultEl.style.display = 'block';
-    }
-  </script>
+<!-- MCP Setup Guide -->
+<section class="space-y-10">
+  <div class="text-center max-w-2xl mx-auto">
+    <h2 class="font-headline text-3xl font-black text-on-surface">MCP Setup Guide</h2>
+    <p class="text-on-surface-variant font-medium mt-2">Deploy your intelligence in minutes with these three steps.</p>
+  </div>
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+    <div class="bg-surface-container-lowest p-8 rounded-3xl border border-outline-variant/30 relative group overflow-hidden">
+      <span class="absolute -right-4 -top-8 text-9xl font-black text-surface-container-low/40 group-hover:text-primary/5 transition-colors">1</span>
+      <div class="relative z-10 space-y-5">
+        <div class="w-10 h-10 rounded-lg bg-primary flex items-center justify-center text-white font-black text-lg">1</div>
+        <h3 class="font-headline text-lg font-bold">Configure Config</h3>
+        <p class="text-sm text-on-surface-variant leading-relaxed">Open your Claude Desktop config file and paste the MCP server configuration provided in the section above.</p>
+      </div>
+    </div>
+    <div class="bg-surface-container-lowest p-8 rounded-3xl border border-outline-variant/30 relative group overflow-hidden">
+      <span class="absolute -right-4 -top-8 text-9xl font-black text-surface-container-low/40 group-hover:text-primary/5 transition-colors">2</span>
+      <div class="relative z-10 space-y-5">
+        <div class="w-10 h-10 rounded-lg bg-primary flex items-center justify-center text-white font-black text-lg">2</div>
+        <h3 class="font-headline text-lg font-bold">Restart Claude</h3>
+        <p class="text-sm text-on-surface-variant leading-relaxed">Completely exit and restart your Claude Desktop application to initialize the new MCP server integration.</p>
+      </div>
+    </div>
+    <div class="bg-surface-container-lowest p-8 rounded-3xl border border-outline-variant/30 relative group overflow-hidden">
+      <span class="absolute -right-4 -top-8 text-9xl font-black text-surface-container-low/40 group-hover:text-primary/5 transition-colors">3</span>
+      <div class="relative z-10 space-y-5">
+        <div class="w-10 h-10 rounded-lg bg-primary flex items-center justify-center text-white font-black text-lg">3</div>
+        <h3 class="font-headline text-lg font-bold">Start Querying</h3>
+        <p class="text-sm text-on-surface-variant leading-relaxed">Your browser will open for login. Then ask Claude about any Dutch license plate, APK status, or vehicle specs.</p>
+      </div>
+    </div>
+  </div>
+</section>
   `);
 }
 
@@ -483,51 +479,135 @@ function setupChatGPT(): string {
   const protocol = domain.startsWith("localhost") ? "http" : "https";
   const mcpUrl = `${protocol}://${domain}/mcp`;
 
-  return page("ChatGPT instellen — RDW MCP", `
-  <a href="/" class="back-link">&larr; Terug naar overzicht</a>
-  <h1>ChatGPT instellen</h1>
-  <p class="page-sub">Verbind ChatGPT met de RDW database. Je hebt een ChatGPT Plus-, Team- of Enterprise-account nodig.</p>
+  return setupPageShell("ChatGPT Integratie | RDW Voertuigdata", "chatgpt", `
+<!-- Hero Section -->
+<section class="relative overflow-hidden rounded-3xl bg-hero-gradient p-10 md:p-14 flex flex-col md:flex-row items-center justify-between gap-12">
+  <div class="relative z-10 space-y-6 max-w-xl">
+    <div class="inline-flex items-center gap-2 px-3 py-1 bg-white/10 backdrop-blur-md border border-white/20 rounded-full text-white text-[10px] font-bold tracking-wider uppercase">
+      <span class="material-symbols-outlined text-[14px]" style="font-variation-settings: 'FILL' 1;">verified</span>
+      OFFICIAL RDW INTEGRATION
+    </div>
+    <h1 class="font-headline text-4xl md:text-6xl font-black text-white leading-tight tracking-tight">Connect to ChatGPT</h1>
+    <p class="text-primary-fixed-dim/90 text-lg leading-relaxed font-medium">
+      Infuse your Custom GPTs with institutional-grade vehicle data from RDW. Perform natural language queries on license plates, specs, and history instantly.
+    </p>
+  </div>
+  <div class="relative shrink-0">
+    <div class="absolute inset-0 bg-white/20 blur-[80px] rounded-full scale-150"></div>
+    <div class="relative bg-white p-10 rounded-[2rem] shadow-2xl">
+      <span class="material-symbols-outlined text-primary text-7xl" style="font-variation-settings: 'FILL' 1;">smart_toy</span>
+    </div>
+  </div>
+</section>
 
-  <div class="steps">
-    <div class="step">
-      <span class="step-num">1</span>
-      <div>
-        <strong>Maak eerst een account aan</strong>
-        <p>Je hebt een API-sleutel nodig om ChatGPT te verbinden.</p>
-        <a href="/signup?platform=chatgpt" class="btn">Account aanmaken &rarr;</a>
+<!-- API Configuration Bento Grid -->
+<section class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+  <div class="lg:col-span-2 bg-surface-container-lowest p-8 md:p-10 rounded-3xl border border-outline-variant/30 flex flex-col justify-between space-y-10">
+    <div>
+      <h2 class="font-headline text-2xl font-black text-on-surface mb-2">Platform Authentication</h2>
+      <p class="text-on-surface-variant font-medium">You need an API key to connect ChatGPT to the RDW database. Create an account to get your key.</p>
+    </div>
+    <div class="space-y-4">
+      <label class="block text-[10px] font-black uppercase tracking-[0.2em] text-outline">MCP Server URL</label>
+      <div class="flex flex-col sm:flex-row gap-4">
+        <div class="flex-grow relative">
+          <input class="w-full bg-surface-container-low border-b-2 border-outline-variant/30 py-4 px-6 rounded-lg font-mono text-sm focus:outline-none focus:border-primary transition-colors" readonly type="text" value="${escapeHtml(mcpUrl)}" title="Klik om te kopi&euml;ren"/>
+          <button onclick="navigator.clipboard.writeText(this.previousElementSibling.value)" class="absolute right-4 top-1/2 -translate-y-1/2 text-primary material-symbols-outlined hover:scale-110 transition-transform">content_copy</button>
+        </div>
+        <a href="/signup?platform=chatgpt" class="bg-primary text-white font-bold px-8 py-4 rounded-lg hover:opacity-90 transition-colors whitespace-nowrap text-center no-underline">
+          Get API Key
+        </a>
       </div>
     </div>
-    <div class="step">
-      <span class="step-num">2</span>
-      <div>
-        <strong>Open ChatGPT instellingen</strong>
-        <p>Ga naar <a href="https://chatgpt.com" target="_blank">chatgpt.com</a>, klik op je profielfoto &rarr; <strong>Settings</strong>.</p>
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div class="p-4 bg-surface-container-low rounded-lg border border-outline-variant/10">
+        <p class="text-[9px] font-black uppercase tracking-widest text-outline mb-1">Status</p>
+        <span class="inline-flex items-center gap-1.5 text-tertiary text-xs font-bold">
+          <span class="w-2 h-2 rounded-full bg-tertiary"></span>
+          Active
+        </span>
       </div>
-    </div>
-    <div class="step">
-      <span class="step-num">3</span>
-      <div>
-        <strong>Voeg de MCP server toe</strong>
-        <p>Ga naar <strong>Tools &amp; integrations</strong> &rarr; <strong>MCP Servers</strong> &rarr; <strong>Add MCP Server</strong>.</p>
-        <p>Voer deze URL in:</p>
-        <div class="code-box copyable" onclick="copyText(this)" title="Klik om te kopiëren">${escapeHtml(mcpUrl)}</div>
+      <div class="p-4 bg-surface-container-low rounded-lg border border-outline-variant/10">
+        <p class="text-[9px] font-black uppercase tracking-widest text-outline mb-1">Protocol</p>
+        <span class="text-on-surface text-xs font-bold">MCP over HTTP</span>
       </div>
-    </div>
-    <div class="step">
-      <span class="step-num">4</span>
-      <div>
-        <strong>Stel authenticatie in</strong>
-        <p>Kies <strong>Bearer Token</strong> als authenticatietype en plak de API-sleutel die je in stap 1 hebt ontvangen.</p>
+      <div class="p-4 bg-surface-container-low rounded-lg border border-outline-variant/10">
+        <p class="text-[9px] font-black uppercase tracking-widest text-outline mb-1">Auth</p>
+        <span class="text-on-surface text-xs font-bold">Bearer Token</span>
       </div>
-    </div>
-    <div class="step">
-      <span class="step-num">5</span>
-      <div>
-        <strong>Klaar!</strong>
-        <p>Stel ChatGPT een vraag over een kenteken, APK-status of terugroepactie.</p>
+      <div class="p-4 bg-surface-container-low rounded-lg border border-outline-variant/10">
+        <p class="text-[9px] font-black uppercase tracking-widest text-outline mb-1">Encrypted</p>
+        <span class="text-on-surface text-xs font-bold">TLS 1.3</span>
       </div>
     </div>
   </div>
+  <div class="bg-surface-container-low p-8 md:p-10 rounded-3xl border border-outline-variant/30 space-y-8">
+    <h3 class="font-headline text-xl font-black text-on-surface">Key Benefits</h3>
+    <ul class="space-y-6">
+      <li class="flex gap-4">
+        <div class="bg-tertiary/10 text-tertiary p-2 rounded-lg h-fit">
+          <span class="material-symbols-outlined text-xl">bolt</span>
+        </div>
+        <div>
+          <h4 class="font-bold text-sm text-on-surface mb-0.5">Real-time Data</h4>
+          <p class="text-xs text-on-surface-variant leading-relaxed">Fetch the latest APK, technical specs, and ownership data directly.</p>
+        </div>
+      </li>
+      <li class="flex gap-4">
+        <div class="bg-primary/10 text-primary p-2 rounded-lg h-fit">
+          <span class="material-symbols-outlined text-xl">chat_bubble</span>
+        </div>
+        <div>
+          <h4 class="font-bold text-sm text-on-surface mb-0.5">Natural Queries</h4>
+          <p class="text-xs text-on-surface-variant leading-relaxed">Ask &ldquo;Which SUVs in this set are diesel?&rdquo; and get instant answers.</p>
+        </div>
+      </li>
+      <li class="flex gap-4">
+        <div class="bg-secondary/10 text-secondary p-2 rounded-lg h-fit">
+          <span class="material-symbols-outlined text-xl">shield</span>
+        </div>
+        <div>
+          <h4 class="font-bold text-sm text-on-surface mb-0.5">Institutional Security</h4>
+          <p class="text-xs text-on-surface-variant leading-relaxed">Enterprise-grade data masking and request filtering protocols.</p>
+        </div>
+      </li>
+    </ul>
+  </div>
+</section>
+
+<!-- Step-by-Step Guide -->
+<section class="space-y-10">
+  <div class="text-center max-w-2xl mx-auto">
+    <h2 class="font-headline text-3xl font-black text-on-surface">Custom GPT Setup Guide</h2>
+    <p class="text-on-surface-variant font-medium mt-2">Deploy your intelligence in minutes with these three steps.</p>
+  </div>
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+    <div class="bg-surface-container-lowest p-8 rounded-3xl border border-outline-variant/30 relative group overflow-hidden">
+      <span class="absolute -right-4 -top-8 text-9xl font-black text-surface-container-low/40 group-hover:text-primary/5 transition-colors">1</span>
+      <div class="relative z-10 space-y-5">
+        <div class="w-10 h-10 rounded-lg bg-primary flex items-center justify-center text-white font-black text-lg">1</div>
+        <h3 class="font-headline text-lg font-bold">Get API Key</h3>
+        <p class="text-sm text-on-surface-variant leading-relaxed">Click &ldquo;Get API Key&rdquo; above to create an account and receive your Bearer token for authentication.</p>
+      </div>
+    </div>
+    <div class="bg-surface-container-lowest p-8 rounded-3xl border border-outline-variant/30 relative group overflow-hidden">
+      <span class="absolute -right-4 -top-8 text-9xl font-black text-surface-container-low/40 group-hover:text-primary/5 transition-colors">2</span>
+      <div class="relative z-10 space-y-5">
+        <div class="w-10 h-10 rounded-lg bg-primary flex items-center justify-center text-white font-black text-lg">2</div>
+        <h3 class="font-headline text-lg font-bold">Add MCP Server</h3>
+        <p class="text-sm text-on-surface-variant leading-relaxed">In ChatGPT Settings &rarr; Tools &amp; integrations &rarr; MCP Servers, add the server URL and paste your Bearer token.</p>
+      </div>
+    </div>
+    <div class="bg-surface-container-lowest p-8 rounded-3xl border border-outline-variant/30 relative group overflow-hidden">
+      <span class="absolute -right-4 -top-8 text-9xl font-black text-surface-container-low/40 group-hover:text-primary/5 transition-colors">3</span>
+      <div class="relative z-10 space-y-5">
+        <div class="w-10 h-10 rounded-lg bg-primary flex items-center justify-center text-white font-black text-lg">3</div>
+        <h3 class="font-headline text-lg font-bold">Start Querying</h3>
+        <p class="text-sm text-on-surface-variant leading-relaxed">Ask ChatGPT about any Dutch license plate, APK status, or vehicle specification and get instant RDW data.</p>
+      </div>
+    </div>
+  </div>
+</section>
   `);
 }
 
@@ -590,35 +670,134 @@ function setupClaudeCode(): string {
   const protocol = domain.startsWith("localhost") ? "http" : "https";
   const mcpUrl = `${protocol}://${domain}/mcp`;
 
-  return page("Claude Code instellen — RDW MCP", `
-  <a href="/" class="back-link">&larr; Terug naar overzicht</a>
-  <h1>Claude Code instellen</h1>
-  <p class="page-sub">Eén commando in je terminal en je bent klaar.</p>
+  return setupPageShell("Claude Code Integratie | RDW Voertuigdata", "claude-code", `
+<!-- Hero Section -->
+<section class="relative overflow-hidden rounded-3xl bg-hero-gradient p-10 md:p-14 flex flex-col md:flex-row items-center justify-between gap-12">
+  <div class="relative z-10 space-y-6 max-w-xl">
+    <div class="inline-flex items-center gap-2 px-3 py-1 bg-white/10 backdrop-blur-md border border-white/20 rounded-full text-white text-[10px] font-bold tracking-wider uppercase">
+      <span class="material-symbols-outlined text-[14px]" style="font-variation-settings: 'FILL' 1;">verified</span>
+      OFFICIAL RDW INTEGRATION
+    </div>
+    <h1 class="font-headline text-4xl md:text-6xl font-black text-white leading-tight tracking-tight">Connect to Claude Code</h1>
+    <p class="text-primary-fixed-dim/90 text-lg leading-relaxed font-medium">
+      Supercharge your development workflow with the official Anthropic Claude CLI tool. Integrated directly into your terminal for maximum velocity.
+    </p>
+  </div>
+  <div class="relative shrink-0">
+    <div class="absolute inset-0 bg-white/20 blur-[80px] rounded-full scale-150"></div>
+    <div class="relative bg-white p-10 rounded-[2rem] shadow-2xl">
+      <span class="material-symbols-outlined text-primary text-7xl" style="font-variation-settings: 'FILL' 1;">terminal</span>
+    </div>
+  </div>
+</section>
 
-  <div class="steps">
-    <div class="step">
-      <span class="step-num">1</span>
-      <div>
-        <strong>Open je terminal</strong>
-        <p>Zorg dat je <a href="https://docs.anthropic.com/en/docs/claude-code" target="_blank">Claude Code</a> geïnstalleerd hebt.</p>
+<!-- Main Body Layout -->
+<section class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+  <div class="lg:col-span-2 bg-surface-container-lowest p-8 md:p-10 rounded-3xl border border-outline-variant/30 flex flex-col justify-between space-y-10">
+    <div>
+      <h2 class="font-headline text-2xl font-black text-on-surface mb-2">MCP Server Toevoegen</h2>
+      <p class="text-on-surface-variant font-medium">Voer onderstaand commando uit in je terminal om de RDW MCP server aan Claude Code toe te voegen.</p>
+    </div>
+    <div class="space-y-4">
+      <label class="block text-[10px] font-black uppercase tracking-[0.2em] text-outline">Installatie Commando</label>
+      <div class="flex flex-col sm:flex-row gap-4">
+        <div class="flex-grow relative">
+          <input class="w-full bg-surface-container-low border-b-2 border-outline-variant/30 py-4 px-6 rounded-lg font-mono text-sm focus:outline-none focus:border-primary transition-colors" readonly type="text" value="claude mcp add --transport http rdw-mcp ${escapeHtml(mcpUrl)}"/>
+          <button onclick="navigator.clipboard.writeText(this.previousElementSibling.value)" class="absolute right-4 top-1/2 -translate-y-1/2 text-primary material-symbols-outlined hover:scale-110 transition-transform">content_copy</button>
+        </div>
       </div>
     </div>
-    <div class="step">
-      <span class="step-num">2</span>
-      <div>
-        <strong>Voer dit commando uit</strong>
-        <div class="code-box copyable" onclick="copyText(this)" title="Klik om te kopiëren">claude mcp add --transport http rdw-mcp ${escapeHtml(mcpUrl)}</div>
-        <p>Je browser opent automatisch om in te loggen met je e-mailadres.</p>
+    <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+      <div class="p-4 bg-surface-container-low rounded-lg border border-outline-variant/10 flex items-center gap-3">
+        <span class="material-symbols-outlined text-primary">verified_user</span>
+        <div>
+          <p class="text-[9px] font-black uppercase tracking-widest text-outline">Auth</p>
+          <span class="text-on-surface text-xs font-bold">OAuth 2.0</span>
+        </div>
       </div>
-    </div>
-    <div class="step">
-      <span class="step-num">3</span>
-      <div>
-        <strong>Klaar!</strong>
-        <p>Vraag Claude Code dingen als: <em>&ldquo;Zoek kenteken AB-123-C op&rdquo;</em> of <em>&ldquo;Check de APK-status van 12-ABC-3&rdquo;</em></p>
+      <div class="p-4 bg-surface-container-low rounded-lg border border-outline-variant/10 flex items-center gap-3">
+        <span class="material-symbols-outlined text-primary">update</span>
+        <div>
+          <p class="text-[9px] font-black uppercase tracking-widest text-outline">Updates</p>
+          <span class="text-on-surface text-xs font-bold">Automatic</span>
+        </div>
+      </div>
+      <div class="p-4 bg-surface-container-low rounded-lg border border-outline-variant/10 flex items-center gap-3">
+        <span class="material-symbols-outlined text-primary">security</span>
+        <div>
+          <p class="text-[9px] font-black uppercase tracking-widest text-outline">Security</p>
+          <span class="text-on-surface text-xs font-bold">Encrypted</span>
+        </div>
       </div>
     </div>
   </div>
+  <div class="bg-surface-container-low p-8 md:p-10 rounded-3xl border border-outline-variant/30 space-y-8">
+    <h3 class="font-headline text-xl font-black text-on-surface">Key Benefits</h3>
+    <ul class="space-y-6">
+      <li class="flex gap-4">
+        <div class="bg-tertiary/10 text-tertiary p-2 rounded-lg h-fit">
+          <span class="material-symbols-outlined text-xl" style="font-variation-settings: 'FILL' 1;">speed</span>
+        </div>
+        <div>
+          <h4 class="font-bold text-sm text-on-surface mb-0.5">Real-time data</h4>
+          <p class="text-xs text-on-surface-variant leading-relaxed">Live indexing of your local filesystem for instant context-aware replies.</p>
+        </div>
+      </li>
+      <li class="flex gap-4">
+        <div class="bg-primary/10 text-primary p-2 rounded-lg h-fit">
+          <span class="material-symbols-outlined text-xl" style="font-variation-settings: 'FILL' 1;">terminal</span>
+        </div>
+        <div>
+          <h4 class="font-bold text-sm text-on-surface mb-0.5">AI-driven CLI</h4>
+          <p class="text-xs text-on-surface-variant leading-relaxed">Generate git commits, refactor functions, and fix bugs without leaving the terminal.</p>
+        </div>
+      </li>
+      <li class="flex gap-4">
+        <div class="bg-secondary/10 text-secondary p-2 rounded-lg h-fit">
+          <span class="material-symbols-outlined text-xl" style="font-variation-settings: 'FILL' 1;">security</span>
+        </div>
+        <div>
+          <h4 class="font-bold text-sm text-on-surface mb-0.5">Secure access</h4>
+          <p class="text-xs text-on-surface-variant leading-relaxed">Enterprise-grade encryption for all code data transmissions.</p>
+        </div>
+      </li>
+    </ul>
+  </div>
+</section>
+
+<!-- Step-by-Step Guide -->
+<section class="space-y-10">
+  <div class="text-center max-w-2xl mx-auto">
+    <h2 class="font-headline text-3xl font-black text-on-surface">CLI Setup Guide</h2>
+    <p class="text-on-surface-variant font-medium mt-2">Deploy your intelligence in minutes with these three steps.</p>
+  </div>
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+    <div class="bg-surface-container-lowest p-8 rounded-3xl border border-outline-variant/30 relative group overflow-hidden">
+      <span class="absolute -right-4 -top-8 text-9xl font-black text-surface-container-low/40 group-hover:text-primary/5 transition-colors">1</span>
+      <div class="relative z-10 space-y-5">
+        <div class="w-10 h-10 rounded-lg bg-primary flex items-center justify-center text-white font-black text-lg">1</div>
+        <h3 class="font-headline text-lg font-bold">Install Claude Code</h3>
+        <p class="text-sm text-on-surface-variant leading-relaxed">Run <code class="bg-surface-container-low px-1 rounded font-mono">npm install -g @anthropic-ai/claude-code</code> to install the CLI globally.</p>
+      </div>
+    </div>
+    <div class="bg-surface-container-lowest p-8 rounded-3xl border border-outline-variant/30 relative group overflow-hidden">
+      <span class="absolute -right-4 -top-8 text-9xl font-black text-surface-container-low/40 group-hover:text-primary/5 transition-colors">2</span>
+      <div class="relative z-10 space-y-5">
+        <div class="w-10 h-10 rounded-lg bg-primary flex items-center justify-center text-white font-black text-lg">2</div>
+        <h3 class="font-headline text-lg font-bold">Add MCP Server</h3>
+        <p class="text-sm text-on-surface-variant leading-relaxed">Run the command above to connect the RDW MCP server. Your browser will open for secure OAuth login.</p>
+      </div>
+    </div>
+    <div class="bg-surface-container-lowest p-8 rounded-3xl border border-outline-variant/30 relative group overflow-hidden">
+      <span class="absolute -right-4 -top-8 text-9xl font-black text-surface-container-low/40 group-hover:text-primary/5 transition-colors">3</span>
+      <div class="relative z-10 space-y-5">
+        <div class="w-10 h-10 rounded-lg bg-primary flex items-center justify-center text-white font-black text-lg">3</div>
+        <h3 class="font-headline text-lg font-bold">Start Coding</h3>
+        <p class="text-sm text-on-surface-variant leading-relaxed">Use <code class="bg-surface-container-low px-1 rounded font-mono">claude &ldquo;zoek kenteken AB-123-C op&rdquo;</code> to get instant RDW data in your terminal.</p>
+      </div>
+    </div>
+  </div>
+</section>
   `);
 }
 
@@ -661,6 +840,121 @@ function signupSuccessPage(email: string, apiKey: string, platform: string): str
 }
 
 // ---------- Helpers ----------
+
+function setupPageShell(title: string, activePlatform: string, mainContent: string): string {
+  const platforms = [
+    { id: "chatgpt", name: "ChatGPT", icon: "smart_toy", href: "/setup/chatgpt" },
+    { id: "claude-desktop", name: "Claude Desktop", icon: "auto_awesome", href: "/setup/claude-desktop" },
+    { id: "claude-code", name: "Claude Code", icon: "terminal", href: "/setup/claude-code" },
+  ];
+  const sidebarItems = platforms.map(p => {
+    if (p.id === activePlatform) {
+      return `<a class="flex items-center gap-3 p-3 rounded-lg bg-surface-container-lowest text-primary font-bold shadow-sm" href="${p.href}"><span class="material-symbols-outlined text-xl" style="font-variation-settings: 'FILL' 1;">${p.icon}</span><span class="text-sm">${p.name}</span></a>`;
+    }
+    return `<a class="flex items-center gap-3 p-3 rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-colors font-medium" href="${p.href}"><span class="material-symbols-outlined text-xl">${p.icon}</span><span class="text-sm">${p.name}</span></a>`;
+  }).join("\n          ");
+  return `<!DOCTYPE html>
+<html class="light" lang="nl"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>${title}</title>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Manrope:wght@700;800;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script>
+tailwind.config = {
+  darkMode: "class",
+  theme: {
+    extend: {
+      colors: {
+        "error": "#ba1a1a", "on-tertiary-fixed": "#002113", "tertiary-fixed": "#6ffbbe",
+        "on-background": "#151c27", "surface-variant": "#dce2f3", "tertiary": "#006242",
+        "on-secondary-fixed": "#1a1a2e", "secondary": "#5d5c74", "surface-dim": "#d3daea",
+        "inverse-on-surface": "#ebf1ff", "on-tertiary": "#ffffff", "primary-fixed": "#dbe1ff",
+        "surface-container-low": "#f0f3ff", "on-error": "#ffffff", "surface-tint": "#2563EB",
+        "surface-container-high": "#e2e8f8", "primary-container": "#2563eb",
+        "outline-variant": "#c3c6d7", "on-primary": "#ffffff", "background": "#f9f9ff",
+        "on-tertiary-fixed-variant": "#005236", "surface-container-highest": "#dce2f3",
+        "primary-fixed-dim": "#b4c5ff", "outline": "#737686", "on-primary-container": "#eeefff",
+        "surface-container-lowest": "#ffffff", "on-primary-fixed-variant": "#003ea8",
+        "secondary-container": "#e2e0fc", "on-surface-variant": "#434655",
+        "on-primary-fixed": "#00174b", "surface-container": "#e7eefe",
+        "on-secondary-fixed-variant": "#45455b", "tertiary-fixed-dim": "#4edea3",
+        "on-error-container": "#93000a", "inverse-primary": "#b4c5ff",
+        "on-secondary": "#ffffff", "on-surface": "#151c27", "secondary-fixed": "#e2e0fc",
+        "error-container": "#ffdad6", "surface-bright": "#f9f9ff", "primary": "#2563EB",
+        "inverse-surface": "#2a313d", "surface": "#f9f9ff",
+        "on-secondary-container": "#63627a", "on-tertiary-container": "#bdffdb",
+        "tertiary-container": "#007d55", "secondary-fixed-dim": "#c6c4df"
+      },
+      fontFamily: {
+        "headline": ["Manrope", "sans-serif"],
+        "body": ["Inter", "sans-serif"],
+        "label": ["Inter", "sans-serif"]
+      },
+      borderRadius: {"DEFAULT": "0.5rem", "lg": "0.5rem", "xl": "0.75rem", "2xl": "1rem", "3xl": "1.5rem", "full": "9999px"},
+    },
+  },
+}
+</script>
+<style>
+.material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+.bg-hero-gradient { background: linear-gradient(135deg, #1d4ed8 0%, #2563eb 100%); }
+</style>
+</head>
+<body class="bg-surface font-body text-on-surface flex flex-col min-h-screen">
+<nav class="bg-surface flex justify-between items-center w-full px-8 py-4 max-w-full mx-auto sticky top-0 z-50 border-b border-outline-variant/30">
+  <div class="flex items-center gap-8">
+    <a href="/" class="text-2xl font-black text-primary tracking-tighter font-headline no-underline">RDW Voertuigdata</a>
+    <div class="hidden md:flex gap-6 items-center">
+      <a class="font-headline font-bold tracking-tight text-on-surface-variant hover:text-primary transition-colors no-underline" href="/">Home</a>
+      <a class="font-headline font-bold tracking-tight text-primary border-b-2 border-primary pb-1 no-underline" href="#">Integraties</a>
+      <a class="font-headline font-bold tracking-tight text-on-surface-variant hover:text-primary transition-colors no-underline" href="/#faq">FAQ</a>
+    </div>
+  </div>
+  <div class="flex items-center gap-4">
+    <a href="/#ai-platforms" class="bg-primary text-white px-5 py-2 rounded-lg font-bold hover:opacity-90 active:scale-95 transition-all text-sm no-underline">Platform kiezen</a>
+  </div>
+</nav>
+<main class="flex-grow flex flex-col md:flex-row w-full max-w-[1440px] mx-auto">
+  <aside class="w-full md:w-64 bg-surface-container-low p-6 border-r border-outline-variant/30 space-y-8">
+    <div>
+      <h3 class="font-headline font-extrabold text-[10px] uppercase tracking-[0.15em] text-outline mb-6">AI Platforms</h3>
+      <nav class="space-y-1">
+          ${sidebarItems}
+      </nav>
+    </div>
+  </aside>
+  <div class="flex-grow p-8 md:p-12 space-y-12">
+    ${mainContent}
+  </div>
+</main>
+<footer class="bg-surface-container-low w-full border-t border-outline-variant/30 px-8 py-10 mt-auto">
+  <div class="max-w-[1440px] mx-auto flex flex-col md:flex-row justify-between items-center">
+    <div class="mb-6 md:mb-0">
+      <span class="text-lg font-black text-primary font-headline">RDW Voertuigdata</span>
+      <p class="text-xs text-on-surface-variant mt-2 font-medium">&copy; 2025 RDW Voertuigdata MCP Server</p>
+    </div>
+    <div class="flex flex-wrap justify-center gap-8">
+      <a class="text-xs font-bold text-on-surface-variant hover:text-primary transition-colors no-underline" href="/">Home</a>
+      <a class="text-xs font-bold text-on-surface-variant hover:text-primary transition-colors no-underline" href="/#faq">FAQ</a>
+    </div>
+  </div>
+</footer>
+<script>
+function copyText(el) {
+  var text = el.innerText || el.value;
+  navigator.clipboard.writeText(text).then(function() {
+    var orig = el.getAttribute('title');
+    el.setAttribute('title', 'Gekopieerd!');
+    setTimeout(function() { el.setAttribute('title', orig); }, 2000);
+  });
+}
+</script>
+</body></html>`;
+}
 
 function page(title: string, content: string): string {
   return `<!DOCTYPE html>
