@@ -5,7 +5,7 @@
  * Used by the SDK's mcpAuthRouter to handle all OAuth endpoints.
  */
 
-import { randomUUID, randomBytes } from "node:crypto";
+import { randomUUID } from "node:crypto";
 import { Response } from "express";
 import type { OAuthServerProvider, AuthorizationParams } from "@modelcontextprotocol/sdk/server/auth/provider.js";
 import type { OAuthRegisteredClientsStore } from "@modelcontextprotocol/sdk/server/auth/clients.js";
@@ -43,29 +43,22 @@ class RdwClientsStore implements OAuthRegisteredClientsStore {
   async registerClient(
     client: Omit<OAuthClientInformationFull, "client_id" | "client_id_issued_at">
   ): Promise<OAuthClientInformationFull> {
-    const clientId = randomUUID();
-    const clientSecret = randomBytes(32).toString("hex");
-    const issuedAt = Math.floor(Date.now() / 1000);
-
-    const { client_secret, client_secret_expires_at, ...metadata } = client as Record<string, unknown>;
-
-    const stored: OAuthClientInformationFull = {
-      ...(metadata as Omit<OAuthClientInformationFull, "client_id" | "client_id_issued_at" | "client_secret" | "client_secret_expires_at">),
-      client_id: clientId,
-      client_secret: clientSecret,
-      client_id_issued_at: issuedAt,
-      client_secret_expires_at: 0, // no expiry
-    };
+    // The SDK's register handler already generates client_id, client_secret,
+    // client_id_issued_at, and client_secret_expires_at before calling this.
+    // We just need to store the client as-is.
+    const fullClient = client as OAuthClientInformationFull;
+    const { client_id, client_secret, client_id_issued_at, client_secret_expires_at, ...metadata } =
+      fullClient as Record<string, unknown>;
 
     storeOAuthClient({
-      client_id: clientId,
-      client_secret: clientSecret,
-      client_id_issued_at: issuedAt,
-      client_secret_expires_at: 0,
+      client_id: client_id as string,
+      client_secret: (client_secret as string) ?? undefined,
+      client_id_issued_at: (client_id_issued_at as number) ?? Math.floor(Date.now() / 1000),
+      client_secret_expires_at: (client_secret_expires_at as number) ?? undefined,
       metadata: JSON.stringify(metadata),
     });
 
-    return stored;
+    return fullClient;
   }
 }
 
