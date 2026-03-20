@@ -19,13 +19,13 @@ RUN npm install --omit=dev
 
 COPY --from=builder /app/dist ./dist
 
-# Create data directory for SQLite
-RUN mkdir -p /app/data && chown mcp:mcp /app/data
+# Create data directory for SQLite (mount a Railway Volume here)
+RUN mkdir -p /data && chown mcp:mcp /data
 
 # Default to HTTP transport for hosted deployment
 ENV TRANSPORT=http
 ENV PORT=8000
-ENV DB_PATH=./data/users.db
+ENV DB_PATH=/data/users.db
 ENV NODE_ENV=production
 
 EXPOSE 8000
