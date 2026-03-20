@@ -151,13 +151,13 @@ function landingPage(): string {
   <div class="flex items-center gap-8">
     <span class="text-xl font-extrabold text-[#1A1A2E] font-headline tracking-tight">RDW Voertuigdata</span>
     <div class="hidden md:flex gap-6 items-center">
-      <a class="font-headline font-bold text-[#2563EB] border-b-2 border-[#2563EB] pb-1 text-sm" href="#">Vehicle Check</a>
+      <a class="font-headline font-bold text-[#2563EB] border-b-2 border-[#2563EB] pb-1 text-sm" href="#tools">Vehicle Check</a>
       <a class="font-headline font-bold text-[#737686] hover:text-[#1A1A2E] transition-colors duration-200 text-sm" href="#ai-platforms">AI Integration</a>
       <a class="font-headline font-bold text-[#737686] hover:text-[#1A1A2E] transition-colors duration-200 text-sm" href="#faq">FAQ</a>
     </div>
   </div>
   <div class="flex items-center gap-4">
-    <a href="/signup?platform=chatgpt" class="bg-primary-container text-white px-6 py-2.5 rounded-lg font-bold text-sm shadow-sm hover:opacity-90 active:scale-95 transition-all no-underline">Get Started</a>
+    <a href="#ai-platforms" class="bg-primary-container text-white px-6 py-2.5 rounded-lg font-bold text-sm shadow-sm hover:opacity-90 active:scale-95 transition-all no-underline">Get Started</a>
   </div>
 </nav>
 </header>
@@ -177,12 +177,12 @@ function landingPage(): string {
   </p>
   <div class="flex flex-col sm:flex-row justify-center gap-4">
     <a href="#ai-platforms" class="tonal-layering text-white px-8 py-4 rounded-xl font-bold text-lg shadow-xl hover:shadow-2xl transition-all no-underline">Start Gratis Integratie</a>
-    <a href="https://github.com/dfranklinau/rdw-mcp-server" target="_blank" class="bg-surface-container-highest text-on-surface px-8 py-4 rounded-xl font-bold text-lg hover:bg-surface-container-high transition-all no-underline">Bekijk Documentatie</a>
+    <a href="#faq" class="bg-surface-container-highest text-on-surface px-8 py-4 rounded-xl font-bold text-lg hover:bg-surface-container-high transition-all no-underline">Meer informatie</a>
   </div>
 </section>
 
 <!-- Core Tools Bento Grid -->
-<section class="max-w-7xl mx-auto px-8 py-16">
+<section id="tools" class="max-w-7xl mx-auto px-8 py-16">
   <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
     <div class="bg-surface-container-lowest p-8 rounded-xl shadow-sm border border-outline-variant/15 flex flex-col items-start hover:translate-y-[-4px] transition-transform">
       <div class="w-12 h-12 bg-primary-fixed rounded-lg flex items-center justify-center mb-6">
@@ -311,10 +311,10 @@ function landingPage(): string {
         </ul>
       </div>
       <div>
-        <h5 class="font-headline text-xs font-bold uppercase tracking-widest text-primary-fixed mb-6">Legal</h5>
+        <h5 class="font-headline text-xs font-bold uppercase tracking-widest text-primary-fixed mb-6">Support</h5>
         <ul class="space-y-4 text-xs font-label uppercase tracking-widest text-[#737686] list-none">
-          <li><a class="hover:text-white transition-all no-underline" href="#">Privacy Policy</a></li>
-          <li><a class="hover:text-white transition-all no-underline" href="#">Terms of Service</a></li>
+          <li><a class="hover:text-white transition-all no-underline" href="#faq">FAQ</a></li>
+          <li><a class="hover:text-white transition-all no-underline" href="/signup?platform=chatgpt">Account aanmaken</a></li>
         </ul>
       </div>
     </div>
