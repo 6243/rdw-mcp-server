@@ -32,7 +32,7 @@ import { registerMerkZoeken } from "./tools/rdw-merk.js";
 import { registerSlimZoeken } from "./tools/rdw-slim-zoeken.js";
 
 // Auth & onboarding
-import { initDb, validateApiKey } from "./db.js";
+import { initDb } from "./db.js";
 import { oauthRouter } from "./oauth.js";
 import { landingRouter } from "./landing.js";
 
@@ -112,24 +112,6 @@ async function runHTTP(): Promise<void> {
 
   // OAuth 2.0 endpoints (no auth required)
   app.use(oauthRouter());
-
-  // ---------- Bearer token auth middleware for /mcp ----------
-
-  app.use("/mcp", (req: Request, res: Response, next: NextFunction) => {
-    const authHeader = req.headers.authorization;
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
-      res.status(401).json({ error: "Missing or malformed Authorization header. Use: Bearer <api_key>" });
-      return;
-    }
-
-    const token = authHeader.slice(7);
-    if (!validateApiKey(token)) {
-      res.status(401).json({ error: "Invalid API key" });
-      return;
-    }
-
-    next();
-  });
 
   // ---------- Stateful session management for SSE support ----------
 
