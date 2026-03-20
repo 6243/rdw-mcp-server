@@ -348,15 +348,6 @@ function setupClaudeDesktop(): string {
   const protocol = domain.startsWith("localhost") ? "http" : "https";
   const mcpUrl = `${protocol}://${domain}/mcp`;
 
-  const configJson = JSON.stringify({
-    mcpServers: {
-      rdw: {
-        command: "npx",
-        args: ["-y", "mcp-remote", mcpUrl]
-      }
-    }
-  }, null, 2);
-
   return setupPageShell("Claude Desktop Integratie | RDW Voertuigdata", "claude-desktop", `
 <!-- Hero Section -->
 <section class="relative overflow-hidden rounded-3xl bg-hero-gradient p-10 md:p-14 flex flex-col md:flex-row items-center justify-between gap-12">
@@ -380,27 +371,48 @@ function setupClaudeDesktop(): string {
 
 <!-- Configuration Bento Grid -->
 <section class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-  <div class="lg:col-span-2 bg-surface-container-lowest p-8 md:p-10 rounded-3xl border border-outline-variant/30 flex flex-col justify-between space-y-10">
+  <div class="lg:col-span-2 bg-surface-container-lowest p-8 md:p-10 rounded-3xl border border-outline-variant/30 flex flex-col space-y-8">
     <div>
-      <div class="flex justify-between items-start mb-2">
-        <h2 class="font-headline text-2xl font-black text-on-surface">Technical Setup</h2>
-        <button onclick="navigator.clipboard.writeText(document.getElementById('config-json').innerText)" class="bg-primary text-white px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 active:scale-95 transition-transform">
+      <h2 class="font-headline text-2xl font-black text-on-surface mb-2">Config Instellen</h2>
+      <p class="text-on-surface-variant font-medium">Plak hieronder de inhoud van je <code class="bg-surface-container-high px-2 py-1 rounded text-primary font-mono text-sm">claude_desktop_config.json</code> bestand. Wij voegen de RDW server er automatisch aan toe.</p>
+    </div>
+
+    <div class="flex gap-2">
+      <button type="button" id="os-windows" onclick="setOS('windows')" class="px-4 py-2 rounded-lg text-sm font-bold bg-primary text-white transition-all">Windows</button>
+      <button type="button" id="os-mac" onclick="setOS('mac')" class="px-4 py-2 rounded-lg text-sm font-bold bg-surface-container-highest text-on-surface-variant hover:bg-surface-container-high transition-all">Mac / Linux</button>
+    </div>
+
+    <div class="space-y-3">
+      <label class="block text-[10px] font-black uppercase tracking-[0.2em] text-outline">Plak hier je huidige config (mag ook leeg zijn)</label>
+      <textarea id="config-input" rows="6" placeholder="Plak hier de inhoud van claude_desktop_config.json..." class="w-full bg-surface-container-low border-2 border-outline-variant/30 py-4 px-6 rounded-xl font-mono text-sm focus:outline-none focus:border-primary transition-colors resize-y"></textarea>
+    </div>
+
+    <button type="button" onclick="mergeConfig()" class="w-full bg-primary text-white py-4 rounded-xl font-black text-base hover:opacity-90 active:scale-[0.98] transition-all">
+      Voeg RDW toe
+    </button>
+
+    <div id="config-error" class="p-4 bg-error-container text-on-error-container rounded-xl text-sm font-medium" style="display:none"></div>
+
+    <div id="config-result" style="display:none" class="space-y-4">
+      <label class="block text-[10px] font-black uppercase tracking-[0.2em] text-outline">Klaar! Kopieer dit en plak het terug in je config-bestand</label>
+      <div class="relative">
+        <div id="config-output" class="bg-on-background rounded-xl p-6 overflow-x-auto font-mono text-sm text-surface-variant leading-relaxed whitespace-pre cursor-pointer" onclick="navigator.clipboard.writeText(this.innerText)" title="Klik om te kopi&euml;ren"></div>
+        <button onclick="navigator.clipboard.writeText(document.getElementById('config-output').innerText)" class="absolute top-4 right-4 bg-primary text-white px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1 active:scale-95 transition-transform">
           <span class="material-symbols-outlined text-sm">content_copy</span>
-          Copy Config
+          Kopieer
         </button>
       </div>
-      <p class="text-on-surface-variant font-medium">Add the following snippet to your <code class="bg-surface-container-high px-2 py-1 rounded text-primary font-mono text-sm">claude_desktop_config.json</code> file:</p>
-    </div>
-    <div class="space-y-4">
-      <div id="config-json" class="bg-on-background rounded-xl p-6 overflow-x-auto font-mono text-sm text-surface-variant leading-relaxed">
-        <pre>${escapeHtml(configJson)}</pre>
+      <div class="p-4 bg-tertiary/10 rounded-xl border border-tertiary/20 flex items-center gap-3">
+        <span class="material-symbols-outlined text-tertiary">check_circle</span>
+        <p class="text-sm text-on-surface font-medium">De RDW server is toegevoegd. Al je bestaande instellingen blijven behouden.</p>
       </div>
     </div>
-    <div class="p-4 bg-surface-container-low rounded-lg border border-outline-variant/10 flex items-center gap-4">
-      <span class="material-symbols-outlined text-primary">info</span>
+
+    <div id="config-path" class="p-4 bg-surface-container-low rounded-lg border border-outline-variant/10 flex items-center gap-4">
+      <span class="material-symbols-outlined text-primary">folder_open</span>
       <div>
-        <p class="text-[9px] font-black uppercase tracking-widest text-outline mb-1">Path</p>
-        <span class="text-on-surface text-xs font-bold">%AppData%\Roaming\Anthropic\Claude\claude_desktop_config.json</span>
+        <p class="text-[9px] font-black uppercase tracking-widest text-outline mb-1">Config bestand locatie</p>
+        <span id="path-text" class="text-on-surface text-xs font-bold">%AppData%\\Roaming\\Anthropic\\Claude\\claude_desktop_config.json</span>
       </div>
     </div>
   </div>
@@ -471,6 +483,71 @@ function setupClaudeDesktop(): string {
     </div>
   </div>
 </section>
+
+<script>
+var currentOS = 'windows';
+var mcpUrl = '${mcpUrl}';
+
+function setOS(os) {
+  currentOS = os;
+  var winBtn = document.getElementById('os-windows');
+  var macBtn = document.getElementById('os-mac');
+  var pathText = document.getElementById('path-text');
+  if (os === 'windows') {
+    winBtn.className = 'px-4 py-2 rounded-lg text-sm font-bold bg-primary text-white transition-all';
+    macBtn.className = 'px-4 py-2 rounded-lg text-sm font-bold bg-surface-container-highest text-on-surface-variant hover:bg-surface-container-high transition-all';
+    pathText.textContent = '%AppData%\\\\Roaming\\\\Anthropic\\\\Claude\\\\claude_desktop_config.json';
+  } else {
+    macBtn.className = 'px-4 py-2 rounded-lg text-sm font-bold bg-primary text-white transition-all';
+    winBtn.className = 'px-4 py-2 rounded-lg text-sm font-bold bg-surface-container-highest text-on-surface-variant hover:bg-surface-container-high transition-all';
+    pathText.textContent = '~/Library/Application Support/Claude/claude_desktop_config.json';
+  }
+  if (document.getElementById('config-result').style.display !== 'none') {
+    mergeConfig();
+  }
+}
+
+function mergeConfig() {
+  var input = document.getElementById('config-input').value.trim();
+  var errorEl = document.getElementById('config-error');
+  var resultEl = document.getElementById('config-result');
+  var outputEl = document.getElementById('config-output');
+
+  errorEl.style.display = 'none';
+  resultEl.style.display = 'none';
+
+  var config;
+  if (!input || input === '') {
+    config = {};
+  } else {
+    try {
+      config = JSON.parse(input);
+    } catch (e) {
+      errorEl.textContent = 'Dit is geen geldige JSON. Kopieer de volledige inhoud van je config-bestand en probeer opnieuw.';
+      errorEl.style.display = 'block';
+      return;
+    }
+  }
+
+  if (typeof config !== 'object' || Array.isArray(config)) {
+    errorEl.textContent = 'De config moet een JSON object zijn (begint met { en eindigt met }).';
+    errorEl.style.display = 'block';
+    return;
+  }
+
+  if (!config.mcpServers || typeof config.mcpServers !== 'object') {
+    config.mcpServers = {};
+  }
+
+  config.mcpServers.rdw = {
+    command: currentOS === 'windows' ? 'npx.cmd' : 'npx',
+    args: ['-y', 'mcp-remote', mcpUrl]
+  };
+
+  outputEl.textContent = JSON.stringify(config, null, 2);
+  resultEl.style.display = 'block';
+}
+</script>
   `);
 }
 
