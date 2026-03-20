@@ -374,12 +374,7 @@ function setupClaudeDesktop(): string {
   <div class="lg:col-span-2 bg-surface-container-lowest p-8 md:p-10 rounded-3xl border border-outline-variant/30 flex flex-col space-y-8">
     <div>
       <h2 class="font-headline text-2xl font-black text-on-surface mb-2">Config Instellen</h2>
-      <p class="text-on-surface-variant font-medium">Plak hieronder de inhoud van je <code class="bg-surface-container-high px-2 py-1 rounded text-primary font-mono text-sm">claude_desktop_config.json</code> bestand. Wij voegen de RDW server er automatisch aan toe.</p>
-    </div>
-
-    <div class="flex gap-2">
-      <button type="button" id="os-windows" onclick="setOS('windows')" class="px-4 py-2 rounded-lg text-sm font-bold bg-primary text-white transition-all">Windows</button>
-      <button type="button" id="os-mac" onclick="setOS('mac')" class="px-4 py-2 rounded-lg text-sm font-bold bg-surface-container-highest text-on-surface-variant hover:bg-surface-container-high transition-all">Mac / Linux</button>
+      <p class="text-on-surface-variant font-medium">Plak hieronder de inhoud van je <code class="bg-surface-container-high px-2 py-1 rounded text-primary font-mono text-sm">claude_desktop_config.json</code> bestand. Wij voegen de RDW server er automatisch aan toe. Geen extra software nodig &mdash; Claude Desktop verbindt rechtstreeks.</p>
     </div>
 
     <div class="space-y-3">
@@ -408,11 +403,16 @@ function setupClaudeDesktop(): string {
       </div>
     </div>
 
-    <div id="config-path" class="p-4 bg-surface-container-low rounded-lg border border-outline-variant/10 flex items-center gap-4">
-      <span class="material-symbols-outlined text-primary">folder_open</span>
-      <div>
-        <p class="text-[9px] font-black uppercase tracking-widest text-outline mb-1">Config bestand locatie</p>
-        <span id="path-text" class="text-on-surface text-xs font-bold">%AppData%\\Roaming\\Anthropic\\Claude\\claude_desktop_config.json</span>
+    <div id="config-path" class="p-4 bg-surface-container-low rounded-lg border border-outline-variant/10 space-y-2">
+      <div class="flex items-center gap-4">
+        <span class="material-symbols-outlined text-primary">folder_open</span>
+        <div>
+          <p class="text-[9px] font-black uppercase tracking-widest text-outline mb-1">Config bestand locatie</p>
+        </div>
+      </div>
+      <div class="space-y-1 pl-10">
+        <p class="text-on-surface text-xs font-bold">Windows: %AppData%\\Claude\\claude_desktop_config.json</p>
+        <p class="text-on-surface text-xs font-bold">Mac: ~/Library/Application Support/Claude/claude_desktop_config.json</p>
       </div>
     </div>
   </div>
@@ -485,27 +485,7 @@ function setupClaudeDesktop(): string {
 </section>
 
 <script>
-var currentOS = 'windows';
 var mcpUrl = '${mcpUrl}';
-
-function setOS(os) {
-  currentOS = os;
-  var winBtn = document.getElementById('os-windows');
-  var macBtn = document.getElementById('os-mac');
-  var pathText = document.getElementById('path-text');
-  if (os === 'windows') {
-    winBtn.className = 'px-4 py-2 rounded-lg text-sm font-bold bg-primary text-white transition-all';
-    macBtn.className = 'px-4 py-2 rounded-lg text-sm font-bold bg-surface-container-highest text-on-surface-variant hover:bg-surface-container-high transition-all';
-    pathText.textContent = '%AppData%\\\\Roaming\\\\Anthropic\\\\Claude\\\\claude_desktop_config.json';
-  } else {
-    macBtn.className = 'px-4 py-2 rounded-lg text-sm font-bold bg-primary text-white transition-all';
-    winBtn.className = 'px-4 py-2 rounded-lg text-sm font-bold bg-surface-container-highest text-on-surface-variant hover:bg-surface-container-high transition-all';
-    pathText.textContent = '~/Library/Application Support/Claude/claude_desktop_config.json';
-  }
-  if (document.getElementById('config-result').style.display !== 'none') {
-    mergeConfig();
-  }
-}
 
 function mergeConfig() {
   var input = document.getElementById('config-input').value.trim();
@@ -540,8 +520,7 @@ function mergeConfig() {
   }
 
   config.mcpServers.rdw = {
-    command: currentOS === 'windows' ? 'npx.cmd' : 'npx',
-    args: ['-y', 'mcp-remote', mcpUrl]
+    url: mcpUrl
   };
 
   outputEl.textContent = JSON.stringify(config, null, 2);
