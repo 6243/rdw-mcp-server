@@ -1,9 +1,10 @@
 /**
- * Onboarding landing page served at /.
+ * Landing page & onboarding — Dutch-language, accessible to non-technical users.
  *
- * Shows a sign-up form (email only). On submit, creates a user and shows
- * their API key plus step-by-step setup instructions for Claude Code,
- * Claude Desktop, ChatGPT, and Gemini.
+ * Routes:
+ *   GET  /           — landing page with platform picker
+ *   GET  /setup/:id  — platform-specific setup instructions
+ *   POST /signup     — email signup (for ChatGPT/Gemini Bearer token flow)
  */
 
 import { Router, Request, Response } from "express";
@@ -15,290 +16,404 @@ export function landingRouter(): Router {
   const router = Router();
 
   router.get("/", (_req: Request, res: Response) => {
-    res.type("html").send(signupPage());
+    res.type("html").send(landingPage());
   });
 
+  router.get("/setup/claude-desktop", (_req: Request, res: Response) => {
+    res.type("html").send(setupClaudeDesktop());
+  });
+
+  router.get("/setup/chatgpt", (_req: Request, res: Response) => {
+    res.type("html").send(setupChatGPT());
+  });
+
+  router.get("/setup/gemini", (_req: Request, res: Response) => {
+    res.type("html").send(setupGemini());
+  });
+
+  router.get("/setup/claude-code", (_req: Request, res: Response) => {
+    res.type("html").send(setupClaudeCode());
+  });
+
+  // Email signup for ChatGPT/Gemini (Bearer token flow)
   router.post("/signup", (req: Request, res: Response) => {
     const email = (req.body as Record<string, string>).email;
+    const platform = (req.body as Record<string, string>).platform || "chatgpt";
     if (!email) {
-      res.status(400).type("html").send(signupPage("Please enter a valid email address."));
+      res.status(400).type("html").send(signupPage(platform, "Vul een geldig e-mailadres in."));
       return;
     }
-
     const apiKey = createUser(email);
-    res.type("html").send(successPage(email, apiKey));
+    res.type("html").send(signupSuccessPage(email, apiKey, platform));
+  });
+
+  router.get("/signup", (req: Request, res: Response) => {
+    const platform = (req.query as Record<string, string>).platform || "chatgpt";
+    res.type("html").send(signupPage(platform));
   });
 
   return router;
 }
 
-function signupPage(error?: string): string {
-  return `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>RDW MCP</title>
-  <style>${CSS}</style>
-</head>
-<body>
-  <div class="card">
-    <h1>RDW MCP</h1>
-    <p class="subtitle">Connect your AI agent to the official Dutch RDW vehicle database</p>
-    <p class="features">Look up license plates, check APK status, find recalls, search by brand, and more — all through natural language.</p>
-    ${error ? `<p class="error">${error}</p>` : ""}
-    <form method="POST" action="/signup">
-      <label for="email">Email address</label>
-      <input type="email" id="email" name="email" required placeholder="you@example.com">
-      <button type="submit">Get API Key</button>
-    </form>
-    <p class="hint">Free to use. Your email is only used to identify your API key.</p>
+// ---------- Pages ----------
+
+function landingPage(): string {
+  return page("RDW MCP — Vraag je AI alles over voertuigdata", `
+  <div class="hero">
+    <div class="hero-badge">Open source &middot; Gratis</div>
+    <h1>RDW Voertuigdata voor je AI</h1>
+    <p class="hero-sub">Stel vragen over kentekens, APK-status, terugroepacties en meer — direct vanuit je favoriete AI-app.</p>
   </div>
-</body>
-</html>`;
+
+  <div class="features">
+    <div class="feature-card">
+      <div class="feature-icon">🔍</div>
+      <h3>Kenteken opzoeken</h3>
+      <p>&ldquo;Wat voor auto is AB-123-C?&rdquo;</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">✅</div>
+      <h3>APK-status</h3>
+      <p>&ldquo;Is de APK van mijn auto nog geldig?&rdquo;</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">⚠️</div>
+      <h3>Terugroepacties</h3>
+      <p>&ldquo;Zijn er recalls voor mijn auto?&rdquo;</p>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>Kies je AI-app om te beginnen</h2>
+    <p class="section-sub">Klik op de app die je gebruikt. We helpen je stap voor stap.</p>
+    <div class="platform-grid">
+      <a href="/setup/claude-desktop" class="platform-card">
+        <div class="platform-name">Claude Desktop</div>
+        <div class="platform-desc">Desktop app van Anthropic</div>
+        <div class="platform-tag easy">Makkelijkst</div>
+      </a>
+      <a href="/setup/chatgpt" class="platform-card">
+        <div class="platform-name">ChatGPT</div>
+        <div class="platform-desc">OpenAI&apos;s chat interface</div>
+        <div class="platform-tag">Plus/Team vereist</div>
+      </a>
+      <a href="/setup/gemini" class="platform-card">
+        <div class="platform-name">Gemini</div>
+        <div class="platform-desc">Google AI Studio</div>
+        <div class="platform-tag">AI Studio</div>
+      </a>
+      <a href="/setup/claude-code" class="platform-card">
+        <div class="platform-name">Claude Code</div>
+        <div class="platform-desc">CLI voor developers</div>
+        <div class="platform-tag dev">Developers</div>
+      </a>
+    </div>
+  </div>
+
+  <div class="section faq">
+    <h2>Veelgestelde vragen</h2>
+    <details>
+      <summary>Wat is een MCP server?</summary>
+      <p>MCP (Model Context Protocol) is een manier om AI-apps extra mogelijkheden te geven. Deze server geeft je AI toegang tot de officiële RDW-database met voertuiggegevens.</p>
+    </details>
+    <details>
+      <summary>Is het gratis?</summary>
+      <p>Ja, deze server is volledig gratis. De RDW voertuigdata is openbaar beschikbaar — wij maken het alleen makkelijk om die data vanuit je AI te gebruiken.</p>
+    </details>
+    <details>
+      <summary>Welke gegevens worden opgeslagen?</summary>
+      <p>Alleen je e-mailadres (als je dat invult voor ChatGPT/Gemini). Er worden geen voertuiggegevens of zoekopdrachten opgeslagen.</p>
+    </details>
+  </div>
+  `);
 }
 
-function successPage(email: string, apiKey: string): string {
+function setupClaudeDesktop(): string {
   const domain = RAILWAY_DOMAIN();
   const protocol = domain.startsWith("localhost") ? "http" : "https";
   const mcpUrl = `${protocol}://${domain}/mcp`;
-  const claudeCodeCmd = `claude mcp add --transport http rdw-mcp ${mcpUrl} --header "Authorization: Bearer ${apiKey}"`;
 
+  // OAuth flow: no API key needed, just mcp-remote with the URL
   const desktopConfig = JSON.stringify({
     mcpServers: {
       rdw: {
         command: "npx",
-        args: ["mcp-remote", mcpUrl, "--header", `Authorization: Bearer ${apiKey}`],
+        args: ["-y", "mcp-remote", mcpUrl],
       },
     },
   }, null, 2);
 
-  return `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>RDW MCP — Your API Key</title>
-  <style>${CSS}</style>
-</head>
-<body>
-  <div class="card wide">
-    <h1>You're all set!</h1>
-    <p class="subtitle">Welcome, <strong>${escapeHtml(email)}</strong></p>
+  const desktopConfigWindows = JSON.stringify({
+    mcpServers: {
+      rdw: {
+        command: "npx.cmd",
+        args: ["-y", "mcp-remote", mcpUrl],
+      },
+    },
+  }, null, 2);
 
-    <div class="key-section">
-      <label>Your API Key</label>
-      <div class="code-box copyable" onclick="copyText(this)" title="Click to copy">${escapeHtml(apiKey)}</div>
-      <p class="hint">Save this key — you'll need it below to connect your AI agent.</p>
-      <div class="info-box">
-        <strong>Only this key is needed.</strong> The RDW open data API is public — this MCP server handles all communication with <code>opendata.rdw.nl</code> for you. You do <em>not</em> need to register at the RDW or obtain a separate API key from them.
+  return page("Claude Desktop instellen — RDW MCP", `
+  <a href="/" class="back-link">&larr; Terug naar overzicht</a>
+  <h1>Claude Desktop instellen</h1>
+  <p class="page-sub">In 4 stappen heb je toegang tot RDW voertuigdata vanuit Claude Desktop. Er wordt automatisch ingelogd via je browser — geen API key nodig.</p>
+
+  <div class="steps">
+    <div class="step">
+      <span class="step-num">1</span>
+      <div>
+        <strong>Installeer Node.js</strong>
+        <p>Download de <strong>LTS-versie</strong> van <a href="https://nodejs.org" target="_blank">nodejs.org</a> en installeer deze. <strong>Herstart je computer</strong> na de installatie.</p>
+        <div class="info-box">Heb je Node.js al? Dan kun je deze stap overslaan.</div>
       </div>
     </div>
-
-    <div class="tabs">
-      <button class="tab active" onclick="showTab('claude-code')">Claude Code</button>
-      <button class="tab" onclick="showTab('claude-desktop')">Claude Desktop</button>
-      <button class="tab" onclick="showTab('chatgpt')">ChatGPT</button>
-      <button class="tab" onclick="showTab('gemini')">Gemini</button>
-    </div>
-
-    <!-- Claude Code -->
-    <div id="tab-claude-code" class="tab-content active">
-      <h2>Connect with Claude Code (CLI)</h2>
-      <div class="steps">
-        <div class="step">
-          <span class="step-num">1</span>
-          <div>
-            <strong>Open your terminal</strong>
-            <p>Make sure you have <a href="https://docs.anthropic.com/en/docs/claude-code" target="_blank">Claude Code</a> installed.</p>
-          </div>
-        </div>
-        <div class="step">
-          <span class="step-num">2</span>
-          <div>
-            <strong>Run this command</strong>
-            <div class="code-box copyable small" onclick="copyText(this)" title="Click to copy">${escapeHtml(claudeCodeCmd)}</div>
-          </div>
-        </div>
-        <div class="step">
-          <span class="step-num">3</span>
-          <div>
-            <strong>Start using it</strong>
-            <p>Ask Claude things like: <em>"Look up license plate AB-123-C"</em> or <em>"What's the APK status of 12-ABC-3?"</em></p>
-          </div>
-        </div>
+    <div class="step">
+      <span class="step-num">2</span>
+      <div>
+        <strong>Open de Claude Desktop instellingen</strong>
+        <p>Open Claude Desktop en ga naar:</p>
+        <p><strong>Settings</strong> &rarr; <strong>Developer</strong> &rarr; <strong>Edit Config</strong></p>
+        <p>Er opent een bestand genaamd <code>claude_desktop_config.json</code>.</p>
       </div>
     </div>
-
-    <!-- Claude Desktop -->
-    <div id="tab-claude-desktop" class="tab-content">
-      <h2>Connect with Claude Desktop</h2>
-      <div class="steps">
-        <div class="step">
-          <span class="step-num">1</span>
-          <div>
-            <strong>Install Node.js</strong>
-            <p>Download and install from <a href="https://nodejs.org" target="_blank">nodejs.org</a> (LTS version). Restart your computer after installing.</p>
-          </div>
-        </div>
-        <div class="step">
-          <span class="step-num">2</span>
-          <div>
-            <strong>Open Claude Desktop settings</strong>
-            <p>Go to <strong>Settings</strong> &rarr; <strong>Developer</strong> &rarr; <strong>Edit Config</strong></p>
-          </div>
-        </div>
-        <div class="step">
-          <span class="step-num">3</span>
-          <div>
-            <strong>Add the MCP server config</strong>
-            <p>Merge this into your <code>claude_desktop_config.json</code>:</p>
-            <div class="code-box copyable small" onclick="copyText(this)" title="Click to copy">${escapeHtml(desktopConfig)}</div>
-            <p class="hint">If you already have other settings in the file, add the <code>"mcpServers"</code> block alongside them.</p>
-          </div>
-        </div>
-        <div class="step">
-          <span class="step-num">4</span>
-          <div>
-            <strong>Restart Claude Desktop</strong>
-            <p>Fully quit (system tray &rarr; Quit) and reopen. Check <strong>Settings &rarr; Developer</strong> — "rdw" should show as connected.</p>
-          </div>
-        </div>
-        <div class="step">
-          <span class="step-num">5</span>
-          <div>
-            <strong>Start using it</strong>
-            <p>Ask Claude things like: <em>"Look up license plate AB-123-C"</em> or <em>"Check the APK status of my car 12-ABC-3"</em></p>
-          </div>
-        </div>
+    <div class="step">
+      <span class="step-num">3</span>
+      <div>
+        <strong>Plak de configuratie</strong>
+        <p><strong>Windows:</strong> Kopieer en plak dit in het bestand:</p>
+        <div class="code-box copyable" onclick="copyText(this)" title="Klik om te kopiëren">${escapeHtml(desktopConfigWindows)}</div>
+        <p><strong>Mac/Linux:</strong> Gebruik in plaats daarvan deze versie:</p>
+        <div class="code-box copyable" onclick="copyText(this)" title="Klik om te kopiëren">${escapeHtml(desktopConfig)}</div>
+        <div class="info-box">Het verschil is <code>npx.cmd</code> (Windows) vs <code>npx</code> (Mac/Linux). Als je al andere servers hebt staan, voeg dan alleen het <code>"rdw"</code>-blok toe binnen <code>"mcpServers"</code>.</div>
       </div>
     </div>
-
-    <!-- ChatGPT -->
-    <div id="tab-chatgpt" class="tab-content">
-      <h2>Connect with ChatGPT</h2>
-      <div class="steps">
-        <div class="step">
-          <span class="step-num">1</span>
-          <div>
-            <strong>Open ChatGPT settings</strong>
-            <p>In <a href="https://chatgpt.com" target="_blank">ChatGPT</a> (Plus/Team/Enterprise required), click your profile icon &rarr; <strong>Settings</strong>.</p>
-          </div>
-        </div>
-        <div class="step">
-          <span class="step-num">2</span>
-          <div>
-            <strong>Go to the MCP section</strong>
-            <p>Navigate to <strong>Settings</strong> &rarr; <strong>Tools &amp; integrations</strong> &rarr; <strong>MCP Servers</strong> &rarr; <strong>Add MCP Server</strong>.</p>
-            <p class="hint">If you don't see this option, MCP support may not be available on your plan yet. Check <a href="https://help.openai.com" target="_blank">OpenAI's documentation</a> for the latest availability.</p>
-          </div>
-        </div>
-        <div class="step">
-          <span class="step-num">3</span>
-          <div>
-            <strong>Enter the server URL</strong>
-            <div class="code-box copyable small" onclick="copyText(this)" title="Click to copy">${escapeHtml(mcpUrl)}</div>
-          </div>
-        </div>
-        <div class="step">
-          <span class="step-num">4</span>
-          <div>
-            <strong>Add authentication</strong>
-            <p>Set the authentication type to <strong>Bearer Token</strong> and paste your API key:</p>
-            <div class="code-box copyable small" onclick="copyText(this)" title="Click to copy">${escapeHtml(apiKey)}</div>
-          </div>
-        </div>
-        <div class="step">
-          <span class="step-num">5</span>
-          <div>
-            <strong>Start using it</strong>
-            <p>In any chat, ask: <em>"Look up Dutch license plate AB-123-C"</em> or <em>"Search for all Tesla models in the RDW database"</em></p>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Gemini -->
-    <div id="tab-gemini" class="tab-content">
-      <h2>Connect with Gemini</h2>
-      <div class="steps">
-        <div class="step">
-          <span class="step-num">1</span>
-          <div>
-            <strong>Open Google AI Studio</strong>
-            <p>Go to <a href="https://aistudio.google.com" target="_blank">Google AI Studio</a> and sign in with your Google account.</p>
-          </div>
-        </div>
-        <div class="step">
-          <span class="step-num">2</span>
-          <div>
-            <strong>Create or open a project</strong>
-            <p>Open an existing project or create a new one.</p>
-          </div>
-        </div>
-        <div class="step">
-          <span class="step-num">3</span>
-          <div>
-            <strong>Add MCP Server tool</strong>
-            <p>In the left panel, find <strong>Tools</strong> and click <strong>Add MCP Server</strong> (or use the tool configuration panel).</p>
-            <p class="hint">MCP support in Gemini may be limited to Google AI Studio. Check <a href="https://ai.google.dev" target="_blank">Google's AI documentation</a> for the latest on MCP support.</p>
-          </div>
-        </div>
-        <div class="step">
-          <span class="step-num">4</span>
-          <div>
-            <strong>Enter the server URL</strong>
-            <div class="code-box copyable small" onclick="copyText(this)" title="Click to copy">${escapeHtml(mcpUrl)}</div>
-          </div>
-        </div>
-        <div class="step">
-          <span class="step-num">5</span>
-          <div>
-            <strong>Configure authentication</strong>
-            <p>Add a custom header for authentication:</p>
-            <div class="code-box small">Header: <strong>Authorization</strong><br>Value: <strong>Bearer ${escapeHtml(apiKey)}</strong></div>
-          </div>
-        </div>
-        <div class="step">
-          <span class="step-num">6</span>
-          <div>
-            <strong>Start using it</strong>
-            <p>Ask Gemini things like: <em>"Look up Dutch license plate AB-123-C"</em> or <em>"What recalls exist for my car 12-ABC-3?"</em></p>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div class="tools-section">
-      <h2>Available Tools</h2>
-      <div class="tools-grid">
-        <div class="tool"><strong>rdw_kenteken_zoeken</strong><span>Quick license plate lookup</span></div>
-        <div class="tool"><strong>rdw_voertuig_details</strong><span>Full vehicle details</span></div>
-        <div class="tool"><strong>rdw_apk_status</strong><span>APK (MOT) inspection status</span></div>
-        <div class="tool"><strong>rdw_terugroep_acties</strong><span>Recall actions lookup</span></div>
-        <div class="tool"><strong>rdw_merk_zoeken</strong><span>Search by brand</span></div>
-        <div class="tool"><strong>rdw_slim_zoeken</strong><span>Natural language search</span></div>
+    <div class="step">
+      <span class="step-num">4</span>
+      <div>
+        <strong>Herstart Claude Desktop</strong>
+        <p>Sluit Claude Desktop volledig af (rechtermuisknop op het icoon in de taakbalk &rarr; <strong>Quit</strong>) en open het opnieuw.</p>
+        <p>Je browser opent automatisch een inlogpagina — vul je e-mailadres in en je bent klaar!</p>
       </div>
     </div>
   </div>
 
-  <script>
-    function showTab(id) {
-      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-      document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-      document.querySelector('[onclick="showTab(\\'' + id + '\\')"]').classList.add('active');
-      document.getElementById('tab-' + id).classList.add('active');
-    }
+  <div class="try-section">
+    <h2>Probeer het uit!</h2>
+    <p>Stel Claude een vraag zoals:</p>
+    <ul class="examples">
+      <li>&ldquo;Wat voor auto is <strong>AB-123-C</strong>?&rdquo;</li>
+      <li>&ldquo;Is de APK van kenteken <strong>12-ABC-3</strong> nog geldig?&rdquo;</li>
+      <li>&ldquo;Zijn er terugroepacties voor mijn auto?&rdquo;</li>
+      <li>&ldquo;Zoek alle Tesla&apos;s in de RDW database&rdquo;</li>
+    </ul>
+  </div>
+  `);
+}
 
+function setupChatGPT(): string {
+  const domain = RAILWAY_DOMAIN();
+  const protocol = domain.startsWith("localhost") ? "http" : "https";
+  const mcpUrl = `${protocol}://${domain}/mcp`;
+
+  return page("ChatGPT instellen — RDW MCP", `
+  <a href="/" class="back-link">&larr; Terug naar overzicht</a>
+  <h1>ChatGPT instellen</h1>
+  <p class="page-sub">Verbind ChatGPT met de RDW database. Je hebt een ChatGPT Plus-, Team- of Enterprise-account nodig.</p>
+
+  <div class="steps">
+    <div class="step">
+      <span class="step-num">1</span>
+      <div>
+        <strong>Maak eerst een account aan</strong>
+        <p>Je hebt een API-sleutel nodig om ChatGPT te verbinden.</p>
+        <a href="/signup?platform=chatgpt" class="btn">Account aanmaken &rarr;</a>
+      </div>
+    </div>
+    <div class="step">
+      <span class="step-num">2</span>
+      <div>
+        <strong>Open ChatGPT instellingen</strong>
+        <p>Ga naar <a href="https://chatgpt.com" target="_blank">chatgpt.com</a>, klik op je profielfoto &rarr; <strong>Settings</strong>.</p>
+      </div>
+    </div>
+    <div class="step">
+      <span class="step-num">3</span>
+      <div>
+        <strong>Voeg de MCP server toe</strong>
+        <p>Ga naar <strong>Tools &amp; integrations</strong> &rarr; <strong>MCP Servers</strong> &rarr; <strong>Add MCP Server</strong>.</p>
+        <p>Voer deze URL in:</p>
+        <div class="code-box copyable" onclick="copyText(this)" title="Klik om te kopiëren">${escapeHtml(mcpUrl)}</div>
+      </div>
+    </div>
+    <div class="step">
+      <span class="step-num">4</span>
+      <div>
+        <strong>Stel authenticatie in</strong>
+        <p>Kies <strong>Bearer Token</strong> als authenticatietype en plak de API-sleutel die je in stap 1 hebt ontvangen.</p>
+      </div>
+    </div>
+    <div class="step">
+      <span class="step-num">5</span>
+      <div>
+        <strong>Klaar!</strong>
+        <p>Stel ChatGPT een vraag over een kenteken, APK-status of terugroepactie.</p>
+      </div>
+    </div>
+  </div>
+  `);
+}
+
+function setupGemini(): string {
+  const domain = RAILWAY_DOMAIN();
+  const protocol = domain.startsWith("localhost") ? "http" : "https";
+  const mcpUrl = `${protocol}://${domain}/mcp`;
+
+  return page("Gemini instellen — RDW MCP", `
+  <a href="/" class="back-link">&larr; Terug naar overzicht</a>
+  <h1>Gemini instellen</h1>
+  <p class="page-sub">Verbind Google Gemini via AI Studio met de RDW database.</p>
+
+  <div class="steps">
+    <div class="step">
+      <span class="step-num">1</span>
+      <div>
+        <strong>Maak eerst een account aan</strong>
+        <p>Je hebt een API-sleutel nodig om Gemini te verbinden.</p>
+        <a href="/signup?platform=gemini" class="btn">Account aanmaken &rarr;</a>
+      </div>
+    </div>
+    <div class="step">
+      <span class="step-num">2</span>
+      <div>
+        <strong>Open Google AI Studio</strong>
+        <p>Ga naar <a href="https://aistudio.google.com" target="_blank">Google AI Studio</a> en log in met je Google-account.</p>
+      </div>
+    </div>
+    <div class="step">
+      <span class="step-num">3</span>
+      <div>
+        <strong>Voeg een MCP server toe</strong>
+        <p>Klik in het linkerpaneel op <strong>Tools</strong> &rarr; <strong>Add MCP Server</strong>.</p>
+        <p>Voer deze URL in:</p>
+        <div class="code-box copyable" onclick="copyText(this)" title="Klik om te kopiëren">${escapeHtml(mcpUrl)}</div>
+      </div>
+    </div>
+    <div class="step">
+      <span class="step-num">4</span>
+      <div>
+        <strong>Stel authenticatie in</strong>
+        <p>Voeg een custom header toe:</p>
+        <div class="code-box">Header: <strong>Authorization</strong><br>Value: <strong>Bearer</strong> <em>[jouw API-sleutel uit stap 1]</em></div>
+      </div>
+    </div>
+    <div class="step">
+      <span class="step-num">5</span>
+      <div>
+        <strong>Klaar!</strong>
+        <p>Stel Gemini een vraag over een kenteken, APK-status of terugroepactie.</p>
+      </div>
+    </div>
+  </div>
+  `);
+}
+
+function setupClaudeCode(): string {
+  const domain = RAILWAY_DOMAIN();
+  const protocol = domain.startsWith("localhost") ? "http" : "https";
+  const mcpUrl = `${protocol}://${domain}/mcp`;
+
+  return page("Claude Code instellen — RDW MCP", `
+  <a href="/" class="back-link">&larr; Terug naar overzicht</a>
+  <h1>Claude Code instellen</h1>
+  <p class="page-sub">Eén commando in je terminal en je bent klaar.</p>
+
+  <div class="steps">
+    <div class="step">
+      <span class="step-num">1</span>
+      <div>
+        <strong>Open je terminal</strong>
+        <p>Zorg dat je <a href="https://docs.anthropic.com/en/docs/claude-code" target="_blank">Claude Code</a> geïnstalleerd hebt.</p>
+      </div>
+    </div>
+    <div class="step">
+      <span class="step-num">2</span>
+      <div>
+        <strong>Voer dit commando uit</strong>
+        <div class="code-box copyable" onclick="copyText(this)" title="Klik om te kopiëren">claude mcp add --transport http rdw-mcp ${escapeHtml(mcpUrl)}</div>
+        <p>Je browser opent automatisch om in te loggen met je e-mailadres.</p>
+      </div>
+    </div>
+    <div class="step">
+      <span class="step-num">3</span>
+      <div>
+        <strong>Klaar!</strong>
+        <p>Vraag Claude Code dingen als: <em>&ldquo;Zoek kenteken AB-123-C op&rdquo;</em> of <em>&ldquo;Check de APK-status van 12-ABC-3&rdquo;</em></p>
+      </div>
+    </div>
+  </div>
+  `);
+}
+
+function signupPage(platform: string, error?: string): string {
+  const platformName = platform === "gemini" ? "Gemini" : "ChatGPT";
+  return page(`Account aanmaken — RDW MCP`, `
+  <a href="/setup/${escapeHtml(platform)}" class="back-link">&larr; Terug naar ${escapeHtml(platformName)} setup</a>
+  <h1>Account aanmaken</h1>
+  <p class="page-sub">Vul je e-mailadres in om een API-sleutel te ontvangen. Deze heb je nodig om ${escapeHtml(platformName)} te verbinden.</p>
+  ${error ? `<p class="error">${error}</p>` : ""}
+  <form method="POST" action="/signup">
+    <input type="hidden" name="platform" value="${escapeHtml(platform)}">
+    <label for="email">E-mailadres</label>
+    <input type="email" id="email" name="email" required placeholder="naam@voorbeeld.nl">
+    <button type="submit" class="btn full">API-sleutel aanvragen</button>
+  </form>
+  <p class="hint">Gratis. Je e-mailadres wordt alleen gebruikt om je API-sleutel aan te koppelen.</p>
+  `);
+}
+
+function signupSuccessPage(email: string, apiKey: string, platform: string): string {
+  const platformName = platform === "gemini" ? "Gemini" : "ChatGPT";
+  return page(`Je API-sleutel — RDW MCP`, `
+  <a href="/setup/${escapeHtml(platform)}" class="back-link">&larr; Terug naar ${escapeHtml(platformName)} setup</a>
+  <h1>Je API-sleutel is klaar!</h1>
+  <p class="page-sub">Welkom, <strong>${escapeHtml(email)}</strong></p>
+
+  <div class="key-section">
+    <label>Jouw API-sleutel</label>
+    <div class="code-box copyable" onclick="copyText(this)" title="Klik om te kopiëren">${escapeHtml(apiKey)}</div>
+    <p class="hint">Bewaar deze sleutel goed — je hebt hem nodig in de volgende stappen.</p>
+  </div>
+
+  <div class="info-box">
+    <strong>Alleen deze sleutel is nodig.</strong> De RDW-data is openbaar — deze server regelt alle communicatie met de RDW voor je. Je hoeft je niet apart bij de RDW te registreren.
+  </div>
+
+  <a href="/setup/${escapeHtml(platform)}" class="btn" style="margin-top:1.5rem;display:inline-block;">Ga verder met de installatie &rarr;</a>
+  `);
+}
+
+// ---------- Helpers ----------
+
+function page(title: string, content: string): string {
+  return `<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>${title}</title>
+  <style>${CSS}</style>
+</head>
+<body>
+  <div class="container">${content}</div>
+  <script>
     function copyText(el) {
-      const text = el.innerText;
-      navigator.clipboard.writeText(text).then(() => {
-        const orig = el.getAttribute('title');
-        el.setAttribute('title', 'Copied!');
+      var text = el.innerText;
+      navigator.clipboard.writeText(text).then(function() {
         el.classList.add('copied');
-        setTimeout(() => {
-          el.setAttribute('title', orig);
+        var orig = el.getAttribute('title');
+        el.setAttribute('title', 'Gekopieerd!');
+        setTimeout(function() {
           el.classList.remove('copied');
+          el.setAttribute('title', orig);
         }, 2000);
       });
     }
@@ -318,72 +433,110 @@ function escapeHtml(s: string): string {
 const CSS = `
   *{box-sizing:border-box;margin:0;padding:0}
   body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
-       background:#f5f7fa;display:flex;align-items:center;justify-content:center;
-       min-height:100vh;padding:1rem}
-  .card{background:#fff;border-radius:12px;box-shadow:0 2px 12px rgba(0,0,0,.08);
-        padding:2.5rem;max-width:520px;width:100%}
-  .card.wide{max-width:680px}
-  h1{font-size:1.5rem;margin-bottom:.4rem;color:#1a1a2e}
-  h2{font-size:1.15rem;margin-bottom:.8rem;color:#1a1a2e;margin-top:.5rem}
-  .subtitle{color:#555;margin-bottom:.5rem;font-size:.95rem}
-  .features{color:#6b7280;margin-bottom:1.5rem;font-size:.9rem;line-height:1.5}
-  .error{color:#dc2626;margin-bottom:1rem;font-size:.9rem}
-  label{display:block;font-weight:600;margin-bottom:.4rem;font-size:.9rem;margin-top:1rem}
-  input[type=email]{width:100%;padding:.65rem .8rem;border:1px solid #d1d5db;
-       border-radius:8px;font-size:1rem;margin-bottom:1rem}
-  button{padding:.7rem 1.2rem;background:#2563eb;color:#fff;font-size:1rem;
-         border:none;border-radius:8px;cursor:pointer;font-weight:600}
-  button:hover{background:#1d4ed8}
-  form button{width:100%}
+       background:#f5f7fa;min-height:100vh;padding:2rem 1rem;color:#1a1a2e}
+  a{color:#2563eb;text-decoration:none}
+  a:hover{text-decoration:underline}
+  code{background:#f1f5f9;padding:.1rem .4rem;border-radius:4px;font-size:.85rem}
+
+  .container{max-width:680px;margin:0 auto}
+
+  /* Hero */
+  .hero{text-align:center;padding:2rem 0 1.5rem}
+  .hero-badge{display:inline-block;background:#ecfdf5;color:#065f46;font-size:.8rem;
+              font-weight:600;padding:.3rem .8rem;border-radius:20px;margin-bottom:1rem;
+              border:1px solid #a7f3d0}
+  .hero h1{font-size:1.8rem;margin-bottom:.6rem;line-height:1.3}
+  .hero-sub{color:#555;font-size:1.05rem;max-width:500px;margin:0 auto;line-height:1.6}
+
+  /* Feature cards */
+  .features{display:grid;grid-template-columns:repeat(3,1fr);gap:.8rem;margin:1.5rem 0 2.5rem}
+  .feature-card{background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:1.2rem;
+                text-align:center}
+  .feature-icon{font-size:1.5rem;margin-bottom:.5rem}
+  .feature-card h3{font-size:.95rem;margin-bottom:.3rem}
+  .feature-card p{color:#6b7280;font-size:.85rem;font-style:italic}
+
+  /* Sections */
+  .section{background:#fff;border-radius:12px;border:1px solid #e2e8f0;padding:2rem;margin-bottom:1.5rem}
+  .section h2{font-size:1.2rem;margin-bottom:.3rem}
+  .section-sub{color:#6b7280;font-size:.9rem;margin-bottom:1.2rem}
+
+  /* Platform grid */
+  .platform-grid{display:grid;grid-template-columns:1fr 1fr;gap:.8rem}
+  .platform-card{display:block;background:#f8fafc;border:2px solid #e2e8f0;border-radius:12px;
+                 padding:1.2rem;text-decoration:none;transition:border-color .2s,box-shadow .2s}
+  .platform-card:hover{border-color:#2563eb;box-shadow:0 2px 8px rgba(37,99,235,.15);text-decoration:none}
+  .platform-name{font-size:1rem;font-weight:700;color:#1a1a2e;margin-bottom:.2rem}
+  .platform-desc{font-size:.85rem;color:#6b7280;margin-bottom:.5rem}
+  .platform-tag{display:inline-block;font-size:.75rem;font-weight:600;padding:.2rem .5rem;
+                border-radius:6px;background:#f1f5f9;color:#6b7280}
+  .platform-tag.easy{background:#ecfdf5;color:#065f46}
+  .platform-tag.dev{background:#eff6ff;color:#1e40af}
+
+  /* FAQ */
+  .faq details{border-bottom:1px solid #e5e7eb;padding:.8rem 0}
+  .faq details:last-child{border-bottom:none}
+  .faq summary{font-weight:600;cursor:pointer;font-size:.95rem;padding:.2rem 0}
+  .faq summary:hover{color:#2563eb}
+  .faq details p{color:#555;font-size:.9rem;line-height:1.6;margin-top:.5rem}
+
+  /* Setup pages */
+  .back-link{display:inline-block;color:#6b7280;font-size:.9rem;margin-bottom:1.5rem}
+  .back-link:hover{color:#2563eb}
+  h1{font-size:1.5rem;margin-bottom:.4rem}
+  .page-sub{color:#555;font-size:.95rem;margin-bottom:1.5rem;line-height:1.5}
+
+  /* Steps */
+  .steps{display:flex;flex-direction:column;gap:1.2rem;margin:1.5rem 0}
+  .step{display:flex;gap:.8rem;align-items:flex-start;background:#fff;border:1px solid #e2e8f0;
+        border-radius:12px;padding:1.2rem}
+  .step-num{background:#2563eb;color:#fff;width:28px;height:28px;border-radius:50%;
+            display:flex;align-items:center;justify-content:center;font-size:.85rem;
+            font-weight:700;flex-shrink:0;margin-top:.1rem}
+  .step > div{flex:1}
+  .step strong{display:block;margin-bottom:.3rem;font-size:1rem}
+  .step p{color:#555;font-size:.9rem;line-height:1.5;margin-top:.3rem}
+
+  /* Code blocks */
   .code-box{background:#f1f5f9;border:1px solid #e2e8f0;border-radius:8px;padding:.7rem .9rem;
             font-family:"SFMono-Regular",Consolas,"Liberation Mono",Menlo,monospace;
-            font-size:.9rem;margin-bottom:.5rem;word-break:break-all;position:relative}
-  .code-box.small{font-size:.82rem}
+            font-size:.82rem;margin:.5rem 0;word-break:break-all;white-space:pre-wrap;position:relative}
   .code-box.copyable{cursor:pointer;transition:border-color .2s}
   .code-box.copyable:hover{border-color:#2563eb}
   .code-box.copied{border-color:#16a34a}
-  .hint{color:#6b7280;font-size:.85rem;margin-top:.5rem}
 
+  /* Info boxes */
   .info-box{background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:.7rem .9rem;
             font-size:.85rem;color:#1e40af;margin-top:.8rem;line-height:1.5}
   .info-box strong{color:#1e3a8a}
-  .info-box code{background:#dbeafe;padding:.1rem .3rem;border-radius:3px;font-size:.8rem}
 
-  .key-section{margin-bottom:1.5rem;padding-bottom:1.5rem;border-bottom:1px solid #e5e7eb}
+  /* Forms & buttons */
+  label{display:block;font-weight:600;margin-bottom:.4rem;font-size:.9rem;margin-top:1rem}
+  input[type=email]{width:100%;padding:.65rem .8rem;border:1px solid #d1d5db;
+       border-radius:8px;font-size:1rem;margin-bottom:1rem}
+  .btn{display:inline-block;padding:.7rem 1.4rem;background:#2563eb;color:#fff;font-size:1rem;
+       border:none;border-radius:8px;cursor:pointer;font-weight:600;text-decoration:none;
+       text-align:center}
+  .btn:hover{background:#1d4ed8;text-decoration:none}
+  .btn.full{width:100%}
+  .hint{color:#6b7280;font-size:.85rem;margin-top:.5rem}
+  .error{color:#dc2626;margin-bottom:1rem;font-size:.9rem}
 
-  .tabs{display:flex;gap:.4rem;margin:1.5rem 0 0;border-bottom:2px solid #e5e7eb;padding-bottom:0}
-  .tab{background:none;color:#6b7280;border:none;padding:.6rem 1rem;font-size:.9rem;
-       font-weight:600;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px;
-       border-radius:0}
-  .tab:hover{color:#1a1a2e;background:none}
-  .tab.active{color:#2563eb;border-bottom-color:#2563eb;background:none}
+  /* Key section */
+  .key-section{margin:1.5rem 0;padding:1.2rem;background:#fff;border:1px solid #e2e8f0;border-radius:12px}
 
-  .tab-content{display:none;padding-top:1.2rem}
-  .tab-content.active{display:block}
-
-  .steps{display:flex;flex-direction:column;gap:1rem}
-  .step{display:flex;gap:.8rem;align-items:flex-start}
-  .step-num{background:#2563eb;color:#fff;width:26px;height:26px;border-radius:50%;
-            display:flex;align-items:center;justify-content:center;font-size:.8rem;
-            font-weight:700;flex-shrink:0;margin-top:.1rem}
-  .step div{flex:1}
-  .step strong{display:block;margin-bottom:.2rem}
-  .step p{color:#555;font-size:.9rem;line-height:1.5;margin-top:.2rem}
-  .step a{color:#2563eb;text-decoration:none}
-  .step a:hover{text-decoration:underline}
-  .step code{background:#f1f5f9;padding:.1rem .4rem;border-radius:4px;font-size:.85rem}
-  .step em{color:#6b7280;font-style:italic}
-
-  .tools-section{margin-top:2rem;padding-top:1.5rem;border-top:1px solid #e5e7eb}
-  .tools-grid{display:grid;grid-template-columns:1fr 1fr;gap:.6rem}
-  .tool{background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:.6rem .8rem}
-  .tool strong{display:block;font-size:.8rem;color:#1a1a2e}
-  .tool span{font-size:.78rem;color:#6b7280}
+  /* Try section */
+  .try-section{background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:1.5rem;margin-top:2rem}
+  .try-section h2{font-size:1.1rem;margin-bottom:.5rem}
+  .examples{list-style:none;padding:0;margin-top:.5rem}
+  .examples li{padding:.4rem 0;color:#555;font-size:.9rem}
+  .examples li:before{content:"💬 ";margin-right:.3rem}
 
   @media(max-width:600px){
-    .tabs{flex-wrap:wrap}
-    .tab{font-size:.8rem;padding:.5rem .7rem}
-    .tools-grid{grid-template-columns:1fr}
-    .card{padding:1.5rem}
+    .features{grid-template-columns:1fr}
+    .platform-grid{grid-template-columns:1fr}
+    .hero h1{font-size:1.4rem}
+    .step{flex-direction:column;gap:.5rem}
+    .step-num{margin-bottom:.2rem}
   }
 `;
