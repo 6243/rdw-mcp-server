@@ -21,6 +21,8 @@ import { randomUUID } from "node:crypto";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
+import { mcpAuthRouter } from "@modelcontextprotocol/sdk/server/auth/router.js";
+import { requireBearerAuth } from "@modelcontextprotocol/sdk/server/auth/middleware/bearerAuth.js";
 import express, { Request, Response, NextFunction } from "express";
 
 // Tool registrations
@@ -33,8 +35,8 @@ import { registerSlimZoeken } from "./tools/rdw-slim-zoeken.js";
 
 // Auth & onboarding
 import { initDb } from "./db.js";
-import { oauthRouter } from "./oauth.js";
 import { landingRouter } from "./landing.js";
+import { RdwOAuthProvider, issueAuthorizationCode } from "./auth-provider.js";
 
 // ---------- Create server ----------
 
@@ -110,8 +112,55 @@ async function runHTTP(): Promise<void> {
   // Landing / onboarding page + signup (no auth required)
   app.use(landingRouter());
 
-  // OAuth 2.0 endpoints (no auth required)
-  app.use(oauthRouter());
+  // ---------- OAuth 2.1 with Dynamic Client Registration (RFC 7591) ----------
+
+  const provider = new RdwOAuthProvider();
+  const domain = process.env.RAILWAY_PUBLIC_DOMAIN || `localhost:${process.env.PORT || "8000"}`;
+  const protocol = domain.startsWith("localhost") ? "http" : "https";
+  const issuerUrl = new URL(`${protocol}://${domain}`);
+  const mcpServerUrl = new URL(`${protocol}://${domain}/mcp`);
+
+  // Mount SDK auth router: handles /.well-known/oauth-authorization-server,
+  // /.well-known/oauth-protected-resource, /register, /authorize, /token, /revoke
+  app.use(mcpAuthRouter({
+    provider,
+    issuerUrl,
+    resourceServerUrl: mcpServerUrl,
+    scopesSupported: ["mcp:tools"],
+  }));
+
+  // Authorization form submit handler (email login)
+  app.post("/authorize/submit", (req: Request, res: Response) => {
+    const { client_id, redirect_uri, code_challenge, state, scopes, resource, email } =
+      req.body as Record<string, string>;
+
+    if (!email || !redirect_uri || !client_id || !code_challenge) {
+      res.status(400).json({ error: "Missing required fields" });
+      return;
+    }
+
+    const code = issueAuthorizationCode({
+      clientId: client_id,
+      codeChallenge: code_challenge,
+      redirectUri: redirect_uri,
+      state: state || undefined,
+      scopes: scopes || undefined,
+      resource: resource || undefined,
+      email,
+    });
+
+    const targetUrl = new URL(redirect_uri);
+    targetUrl.searchParams.set("code", code);
+    if (state) targetUrl.searchParams.set("state", state);
+    res.redirect(302, targetUrl.toString());
+  });
+
+  // ---------- Bearer auth middleware for /mcp ----------
+
+  const bearerAuth = requireBearerAuth({
+    verifier: provider,
+    resourceMetadataUrl: `${protocol}://${domain}/.well-known/oauth-protected-resource`,
+  });
 
   // ---------- Stateful session management for SSE support ----------
 
@@ -128,8 +177,8 @@ async function runHTTP(): Promise<void> {
     return s;
   }
 
-  // MCP endpoint — stateful with SSE support
-  app.post("/mcp", async (req: Request, res: Response) => {
+  // MCP endpoint — stateful with SSE support (auth required)
+  app.post("/mcp", bearerAuth, async (req: Request, res: Response) => {
     try {
       // Check for existing session
       const sessionId = req.headers["mcp-session-id"] as string | undefined;
@@ -172,8 +221,8 @@ async function runHTTP(): Promise<void> {
     }
   });
 
-  // GET /mcp — SSE stream for server-to-client notifications
-  app.get("/mcp", async (req: Request, res: Response) => {
+  // GET /mcp — SSE stream for server-to-client notifications (auth required)
+  app.get("/mcp", bearerAuth, async (req: Request, res: Response) => {
     const sessionId = req.headers["mcp-session-id"] as string | undefined;
     if (!sessionId || !sessions.has(sessionId)) {
       res.status(400).json({ error: "Missing or invalid session ID. Send an initialize POST first." });
@@ -183,8 +232,8 @@ async function runHTTP(): Promise<void> {
     await session.transport.handleRequest(req, res);
   });
 
-  // DELETE /mcp — session cleanup
-  app.delete("/mcp", async (req: Request, res: Response) => {
+  // DELETE /mcp — session cleanup (auth required)
+  app.delete("/mcp", bearerAuth, async (req: Request, res: Response) => {
     const sessionId = req.headers["mcp-session-id"] as string | undefined;
     if (!sessionId || !sessions.has(sessionId)) {
       res.status(404).json({ error: "Session not found" });
