@@ -90,6 +90,9 @@ function successPage(email: string, apiKey: string): string {
       <label>Your API Key</label>
       <div class="code-box copyable" onclick="copyText(this)" title="Click to copy">${escapeHtml(apiKey)}</div>
       <p class="hint">Save this key — you'll need it below to connect your AI agent.</p>
+      <div class="info-box">
+        <strong>Only this key is needed.</strong> The RDW open data API is public — this MCP server handles all communication with <code>opendata.rdw.nl</code> for you. You do <em>not</em> need to register at the RDW or obtain a separate API key from them.
+      </div>
     </div>
 
     <div class="tabs">
@@ -340,6 +343,11 @@ const CSS = `
   .code-box.copyable:hover{border-color:#2563eb}
   .code-box.copied{border-color:#16a34a}
   .hint{color:#6b7280;font-size:.85rem;margin-top:.5rem}
+
+  .info-box{background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:.7rem .9rem;
+            font-size:.85rem;color:#1e40af;margin-top:.8rem;line-height:1.5}
+  .info-box strong{color:#1e3a8a}
+  .info-box code{background:#dbeafe;padding:.1rem .3rem;border-radius:3px;font-size:.8rem}
 
   .key-section{margin-bottom:1.5rem;padding-bottom:1.5rem;border-bottom:1px solid #e5e7eb}
 
