@@ -11,8 +11,8 @@ RUN npm run build
 FROM node:20-alpine
 WORKDIR /app
 
-# Security: run as non-root
-RUN addgroup -S mcp && adduser -S mcp -G mcp
+# Security: run as non-root (su-exec for entrypoint privilege drop)
+RUN apk add --no-cache su-exec && addgroup -S mcp && adduser -S mcp -G mcp
 
 COPY package*.json ./
 RUN npm install --omit=dev
@@ -33,5 +33,5 @@ EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
   CMD wget -qO- http://localhost:8000/health || exit 1
 
-USER mcp
-CMD ["node", "dist/index.js", "--http"]
+# Entrypoint: fix volume permissions then drop to mcp user
+CMD ["sh", "-c", "chown -R mcp:mcp /data && exec su-exec mcp node dist/index.js --http"]
