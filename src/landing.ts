@@ -97,11 +97,11 @@ function landingPage(): string {
         <div class="platform-desc">OpenAI&apos;s chat interface</div>
         <div class="platform-tag">Plus/Team vereist</div>
       </a>
-      <a href="/setup/gemini" class="platform-card">
+      <div class="platform-card disabled">
         <div class="platform-name">Gemini</div>
         <div class="platform-desc">Google AI Studio</div>
-        <div class="platform-tag">AI Studio</div>
-      </a>
+        <div class="platform-tag">Nog niet ondersteund</div>
+      </div>
       <a href="/setup/claude-code" class="platform-card">
         <div class="platform-name">Claude Code</div>
         <div class="platform-desc">CLI voor developers</div>
@@ -519,7 +519,8 @@ const CSS = `
   .platform-grid{display:grid;grid-template-columns:1fr 1fr;gap:.8rem}
   .platform-card{display:block;background:#f8fafc;border:2px solid #e2e8f0;border-radius:12px;
                  padding:1.2rem;text-decoration:none;transition:border-color .2s,box-shadow .2s}
-  .platform-card:hover{border-color:#2563eb;box-shadow:0 2px 8px rgba(37,99,235,.15);text-decoration:none}
+  .platform-card:hover:not(.disabled){border-color:#2563eb;box-shadow:0 2px 8px rgba(37,99,235,.15);text-decoration:none}
+  .platform-card.disabled{opacity:.45;cursor:default;pointer-events:none}
   .platform-name{font-size:1rem;font-weight:700;color:#1a1a2e;margin-bottom:.2rem}
   .platform-desc{font-size:.85rem;color:#6b7280;margin-bottom:.5rem}
   .platform-tag{display:inline-block;font-size:.75rem;font-weight:600;padding:.2rem .5rem;
