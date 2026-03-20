@@ -144,19 +144,12 @@ export function oauthRouter(): Router {
   });
 
   // ---------- OAuth metadata ----------
-
-  router.get("/.well-known/oauth-authorization-server", (req: Request, res: Response) => {
-    const baseUrl = getBaseUrl(req);
-    res.json({
-      issuer: baseUrl,
-      authorization_endpoint: `${baseUrl}/oauth/authorize`,
-      token_endpoint: `${baseUrl}/oauth/token`,
-      response_types_supported: ["code"],
-      grant_types_supported: ["authorization_code"],
-      code_challenge_methods_supported: ["S256"],
-      token_endpoint_auth_methods_supported: ["client_secret_post"],
-    });
-  });
+  // Note: /.well-known/oauth-authorization-server is intentionally NOT served
+  // here. mcp-remote (Claude Desktop bridge) discovers it and attempts OAuth
+  // dynamic client registration, which conflicts with our simple Bearer-token
+  // auth. ChatGPT custom connectors can be configured with direct URLs:
+  //   authorization_endpoint: /oauth/authorize
+  //   token_endpoint:         /oauth/token
 
   return router;
 }
