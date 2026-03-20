@@ -17,6 +17,7 @@
  *   - rdw_slim_zoeken: Natural language smart search
  */
 
+import { randomUUID } from "node:crypto";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
@@ -130,18 +131,57 @@ async function runHTTP(): Promise<void> {
     next();
   });
 
-  // MCP endpoint — stateless JSON mode
+  // ---------- Stateful session management for SSE support ----------
+
+  const sessions = new Map<string, { transport: StreamableHTTPServerTransport; server: McpServer }>();
+
+  function createSessionServer(): McpServer {
+    const s = new McpServer({ name: "rdw-mcp-server", version: "1.0.0" });
+    registerKentekenZoeken(s);
+    registerVoertuigDetails(s);
+    registerApkStatus(s);
+    registerTerugroepActies(s);
+    registerMerkZoeken(s);
+    registerSlimZoeken(s);
+    return s;
+  }
+
+  // MCP endpoint — stateful with SSE support
   app.post("/mcp", async (req: Request, res: Response) => {
     try {
+      // Check for existing session
+      const sessionId = req.headers["mcp-session-id"] as string | undefined;
+      if (sessionId && sessions.has(sessionId)) {
+        const session = sessions.get(sessionId)!;
+        await session.transport.handleRequest(req, res, req.body);
+        return;
+      }
+
+      // New session: only allowed via initialize request
+      if (sessionId && !sessions.has(sessionId)) {
+        res.status(404).json({ error: "Session not found" });
+        return;
+      }
+
+      // Create new stateful transport + per-session server
       const transport = new StreamableHTTPServerTransport({
-        sessionIdGenerator: undefined,
-        enableJsonResponse: true,
+        sessionIdGenerator: () => randomUUID(),
       });
 
-      res.on("close", () => transport.close());
+      const sessionServer = createSessionServer();
 
-      await server.connect(transport);
+      transport.onclose = () => {
+        const sid = transport.sessionId;
+        if (sid) sessions.delete(sid);
+      };
+
+      await sessionServer.connect(transport);
       await transport.handleRequest(req, res, req.body);
+
+      const sid = transport.sessionId;
+      if (sid) {
+        sessions.set(sid, { transport, server: sessionServer });
+      }
     } catch (error: unknown) {
       console.error("MCP request error:", error);
       if (!res.headersSent) {
@@ -150,13 +190,26 @@ async function runHTTP(): Promise<void> {
     }
   });
 
-  // Handle GET and DELETE on /mcp for protocol compliance
-  app.get("/mcp", (_req: Request, res: Response) => {
-    res.status(405).json({ error: "Method not allowed. Use POST for MCP requests." });
+  // GET /mcp — SSE stream for server-to-client notifications
+  app.get("/mcp", async (req: Request, res: Response) => {
+    const sessionId = req.headers["mcp-session-id"] as string | undefined;
+    if (!sessionId || !sessions.has(sessionId)) {
+      res.status(400).json({ error: "Missing or invalid session ID. Send an initialize POST first." });
+      return;
+    }
+    const session = sessions.get(sessionId)!;
+    await session.transport.handleRequest(req, res);
   });
 
-  app.delete("/mcp", (_req: Request, res: Response) => {
-    res.status(405).json({ error: "Method not allowed. Use POST for MCP requests." });
+  // DELETE /mcp — session cleanup
+  app.delete("/mcp", async (req: Request, res: Response) => {
+    const sessionId = req.headers["mcp-session-id"] as string | undefined;
+    if (!sessionId || !sessions.has(sessionId)) {
+      res.status(404).json({ error: "Session not found" });
+      return;
+    }
+    const session = sessions.get(sessionId)!;
+    await session.transport.handleRequest(req, res);
   });
 
   const port = parseInt(process.env.PORT || "8000", 10);
