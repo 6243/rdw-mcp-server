@@ -246,16 +246,16 @@ function landingPage(): string {
         <h4 class="font-headline font-bold text-lg mb-1">Claude Code</h4>
         <p class="text-xs text-on-surface-variant">Command-line interface tools</p>
       </a>
-      <div class="bg-surface-container-lowest p-6 rounded-xl border border-outline-variant/10 opacity-70">
+      <a href="/setup/gemini" class="bg-surface-container-lowest p-6 rounded-xl border border-outline-variant/10 group cursor-pointer hover:bg-white transition-all no-underline text-inherit">
         <div class="flex justify-between items-start mb-6">
           <div class="w-14 h-14 bg-surface-container rounded-lg flex items-center justify-center">
             <span class="material-symbols-outlined text-on-surface-variant text-3xl">diamond</span>
           </div>
-          <span class="px-3 py-1 rounded-full bg-surface-container-highest text-outline text-[10px] font-bold uppercase tracking-wider">Binnenkort</span>
+          <span class="px-3 py-1 rounded-full bg-surface-container-highest text-outline text-[10px] font-bold uppercase tracking-wider">AI Studio</span>
         </div>
-        <h4 class="font-headline font-bold text-lg mb-1 text-outline">Gemini</h4>
-        <p class="text-xs text-outline">Nog niet ondersteund</p>
-      </div>
+        <h4 class="font-headline font-bold text-lg mb-1">Gemini</h4>
+        <p class="text-xs text-on-surface-variant">Google AI Studio integratie</p>
+      </a>
     </div>
   </div>
 </section>
@@ -616,52 +616,135 @@ function setupGemini(): string {
   const protocol = domain.startsWith("localhost") ? "http" : "https";
   const mcpUrl = `${protocol}://${domain}/mcp`;
 
-  return page("Gemini instellen — RDW MCP", `
-  <a href="/" class="back-link">&larr; Terug naar overzicht</a>
-  <h1>Gemini instellen</h1>
-  <p class="page-sub">Verbind Google Gemini via AI Studio met de RDW database.</p>
+  return setupPageShell("Gemini Integratie | RDW Voertuigdata", "gemini", `
+<!-- Hero Section -->
+<section class="relative overflow-hidden rounded-3xl bg-hero-gradient p-10 md:p-14 flex flex-col md:flex-row items-center justify-between gap-12">
+  <div class="relative z-10 space-y-6 max-w-xl">
+    <div class="inline-flex items-center gap-2 px-3 py-1 bg-white/10 backdrop-blur-md border border-white/20 rounded-full text-white text-[10px] font-bold tracking-wider uppercase">
+      <span class="material-symbols-outlined text-[14px]" style="font-variation-settings: 'FILL' 1;">verified</span>
+      OFFICIAL RDW INTEGRATION
+    </div>
+    <h1 class="font-headline text-4xl md:text-6xl font-black text-white leading-tight tracking-tight">Connect to Gemini</h1>
+    <p class="text-primary-fixed-dim/90 text-lg leading-relaxed font-medium">
+      Verbind Google Gemini via AI Studio met de RDW database. Bevraag voertuigdata, APK-statussen en terugroepacties met natuurlijke taal.
+    </p>
+  </div>
+  <div class="relative shrink-0">
+    <div class="absolute inset-0 bg-white/20 blur-[80px] rounded-full scale-150"></div>
+    <div class="relative bg-white p-10 rounded-[2rem] shadow-2xl">
+      <span class="material-symbols-outlined text-primary text-7xl" style="font-variation-settings: 'FILL' 1;">temp_preferences_custom</span>
+    </div>
+  </div>
+</section>
 
-  <div class="steps">
-    <div class="step">
-      <span class="step-num">1</span>
-      <div>
-        <strong>Maak eerst een account aan</strong>
-        <p>Je hebt een API-sleutel nodig om Gemini te verbinden.</p>
-        <a href="/signup?platform=gemini" class="btn">Account aanmaken &rarr;</a>
+<!-- API Configuration Bento Grid -->
+<section class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+  <div class="lg:col-span-2 bg-surface-container-lowest p-8 md:p-10 rounded-3xl border border-outline-variant/30 flex flex-col justify-between space-y-10">
+    <div>
+      <h2 class="font-headline text-2xl font-black text-on-surface mb-2">Platform Authentication</h2>
+      <p class="text-on-surface-variant font-medium">You need an API key to connect Gemini to the RDW database. Create an account to get your key.</p>
+    </div>
+    <div class="space-y-4">
+      <label class="block text-[10px] font-black uppercase tracking-[0.2em] text-outline">MCP Server URL</label>
+      <div class="flex flex-col sm:flex-row gap-4">
+        <div class="flex-grow relative">
+          <input class="w-full bg-surface-container-low border-b-2 border-outline-variant/30 py-4 px-6 rounded-lg font-mono text-sm focus:outline-none focus:border-primary transition-colors" readonly type="text" value="${escapeHtml(mcpUrl)}" title="Klik om te kopi&euml;ren"/>
+          <button onclick="navigator.clipboard.writeText(this.previousElementSibling.value)" class="absolute right-4 top-1/2 -translate-y-1/2 text-primary material-symbols-outlined hover:scale-110 transition-transform">content_copy</button>
+        </div>
+        <a href="/signup?platform=gemini" class="bg-primary text-white font-bold px-8 py-4 rounded-lg hover:opacity-90 transition-colors whitespace-nowrap text-center no-underline">
+          Get API Key
+        </a>
       </div>
     </div>
-    <div class="step">
-      <span class="step-num">2</span>
-      <div>
-        <strong>Open Google AI Studio</strong>
-        <p>Ga naar <a href="https://aistudio.google.com" target="_blank">Google AI Studio</a> en log in met je Google-account.</p>
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div class="p-4 bg-surface-container-low rounded-lg border border-outline-variant/10">
+        <p class="text-[9px] font-black uppercase tracking-widest text-outline mb-1">Status</p>
+        <span class="inline-flex items-center gap-1.5 text-tertiary text-xs font-bold">
+          <span class="w-2 h-2 rounded-full bg-tertiary"></span>
+          Active
+        </span>
       </div>
-    </div>
-    <div class="step">
-      <span class="step-num">3</span>
-      <div>
-        <strong>Voeg een MCP server toe</strong>
-        <p>Klik in het linkerpaneel op <strong>Tools</strong> &rarr; <strong>Add MCP Server</strong>.</p>
-        <p>Voer deze URL in:</p>
-        <div class="code-box copyable" onclick="copyText(this)" title="Klik om te kopiëren">${escapeHtml(mcpUrl)}</div>
+      <div class="p-4 bg-surface-container-low rounded-lg border border-outline-variant/10">
+        <p class="text-[9px] font-black uppercase tracking-widest text-outline mb-1">Protocol</p>
+        <span class="text-on-surface text-xs font-bold">MCP over HTTP</span>
       </div>
-    </div>
-    <div class="step">
-      <span class="step-num">4</span>
-      <div>
-        <strong>Stel authenticatie in</strong>
-        <p>Voeg een custom header toe:</p>
-        <div class="code-box">Header: <strong>Authorization</strong><br>Value: <strong>Bearer</strong> <em>[jouw API-sleutel uit stap 1]</em></div>
+      <div class="p-4 bg-surface-container-low rounded-lg border border-outline-variant/10">
+        <p class="text-[9px] font-black uppercase tracking-widest text-outline mb-1">Auth</p>
+        <span class="text-on-surface text-xs font-bold">Bearer Token</span>
       </div>
-    </div>
-    <div class="step">
-      <span class="step-num">5</span>
-      <div>
-        <strong>Klaar!</strong>
-        <p>Stel Gemini een vraag over een kenteken, APK-status of terugroepactie.</p>
+      <div class="p-4 bg-surface-container-low rounded-lg border border-outline-variant/10">
+        <p class="text-[9px] font-black uppercase tracking-widest text-outline mb-1">Encrypted</p>
+        <span class="text-on-surface text-xs font-bold">TLS 1.3</span>
       </div>
     </div>
   </div>
+  <div class="bg-surface-container-low p-8 md:p-10 rounded-3xl border border-outline-variant/30 space-y-8">
+    <h3 class="font-headline text-xl font-black text-on-surface">Key Benefits</h3>
+    <ul class="space-y-6">
+      <li class="flex gap-4">
+        <div class="bg-tertiary/10 text-tertiary p-2 rounded-lg h-fit">
+          <span class="material-symbols-outlined text-xl">bolt</span>
+        </div>
+        <div>
+          <h4 class="font-bold text-sm text-on-surface mb-0.5">Real-time Data</h4>
+          <p class="text-xs text-on-surface-variant leading-relaxed">Fetch the latest APK, technical specs, and ownership data directly.</p>
+        </div>
+      </li>
+      <li class="flex gap-4">
+        <div class="bg-primary/10 text-primary p-2 rounded-lg h-fit">
+          <span class="material-symbols-outlined text-xl">chat_bubble</span>
+        </div>
+        <div>
+          <h4 class="font-bold text-sm text-on-surface mb-0.5">Natural Queries</h4>
+          <p class="text-xs text-on-surface-variant leading-relaxed">Ask &ldquo;Which SUVs in this set are diesel?&rdquo; and get instant answers.</p>
+        </div>
+      </li>
+      <li class="flex gap-4">
+        <div class="bg-secondary/10 text-secondary p-2 rounded-lg h-fit">
+          <span class="material-symbols-outlined text-xl">shield</span>
+        </div>
+        <div>
+          <h4 class="font-bold text-sm text-on-surface mb-0.5">Institutional Security</h4>
+          <p class="text-xs text-on-surface-variant leading-relaxed">Enterprise-grade data masking and request filtering protocols.</p>
+        </div>
+      </li>
+    </ul>
+  </div>
+</section>
+
+<!-- Step-by-Step Guide -->
+<section class="space-y-10">
+  <div class="text-center max-w-2xl mx-auto">
+    <h2 class="font-headline text-3xl font-black text-on-surface">Gemini Setup Guide</h2>
+    <p class="text-on-surface-variant font-medium mt-2">Deploy your intelligence in minutes with these three steps.</p>
+  </div>
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+    <div class="bg-surface-container-lowest p-8 rounded-3xl border border-outline-variant/30 relative group overflow-hidden">
+      <span class="absolute -right-4 -top-8 text-9xl font-black text-surface-container-low/40 group-hover:text-primary/5 transition-colors">1</span>
+      <div class="relative z-10 space-y-5">
+        <div class="w-10 h-10 rounded-lg bg-primary flex items-center justify-center text-white font-black text-lg">1</div>
+        <h3 class="font-headline text-lg font-bold">Get API Key</h3>
+        <p class="text-sm text-on-surface-variant leading-relaxed">Click &ldquo;Get API Key&rdquo; above to create an account and receive your Bearer token for authentication.</p>
+      </div>
+    </div>
+    <div class="bg-surface-container-lowest p-8 rounded-3xl border border-outline-variant/30 relative group overflow-hidden">
+      <span class="absolute -right-4 -top-8 text-9xl font-black text-surface-container-low/40 group-hover:text-primary/5 transition-colors">2</span>
+      <div class="relative z-10 space-y-5">
+        <div class="w-10 h-10 rounded-lg bg-primary flex items-center justify-center text-white font-black text-lg">2</div>
+        <h3 class="font-headline text-lg font-bold">Add MCP Server</h3>
+        <p class="text-sm text-on-surface-variant leading-relaxed">In Google AI Studio, click Tools &rarr; Add MCP Server. Paste the server URL and set a custom header: <code class="bg-surface-container-low px-1 rounded font-mono">Authorization: Bearer [your key]</code>.</p>
+      </div>
+    </div>
+    <div class="bg-surface-container-lowest p-8 rounded-3xl border border-outline-variant/30 relative group overflow-hidden">
+      <span class="absolute -right-4 -top-8 text-9xl font-black text-surface-container-low/40 group-hover:text-primary/5 transition-colors">3</span>
+      <div class="relative z-10 space-y-5">
+        <div class="w-10 h-10 rounded-lg bg-primary flex items-center justify-center text-white font-black text-lg">3</div>
+        <h3 class="font-headline text-lg font-bold">Start Querying</h3>
+        <p class="text-sm text-on-surface-variant leading-relaxed">Ask Gemini about any Dutch license plate, APK status, or vehicle specification and get instant RDW data.</p>
+      </div>
+    </div>
+  </div>
+</section>
   `);
 }
 
@@ -846,6 +929,7 @@ function setupPageShell(title: string, activePlatform: string, mainContent: stri
     { id: "chatgpt", name: "ChatGPT", icon: "smart_toy", href: "/setup/chatgpt" },
     { id: "claude-desktop", name: "Claude Desktop", icon: "auto_awesome", href: "/setup/claude-desktop" },
     { id: "claude-code", name: "Claude Code", icon: "terminal", href: "/setup/claude-code" },
+    { id: "gemini", name: "Gemini", icon: "temp_preferences_custom", href: "/setup/gemini" },
   ];
   const sidebarItems = platforms.map(p => {
     if (p.id === activePlatform) {
