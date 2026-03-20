@@ -369,12 +369,49 @@ function setupClaudeDesktop(): string {
   </div>
 </section>
 
-<!-- Configuration Bento Grid -->
+<!-- Method 1: Connectors UI (Recommended) -->
+<section class="bg-surface-container-lowest p-8 md:p-10 rounded-3xl border-2 border-primary/30 space-y-6">
+  <div class="flex items-center gap-3">
+    <span class="px-3 py-1 rounded-full bg-tertiary-container text-on-tertiary-container text-[10px] font-bold uppercase tracking-wider">Aanbevolen</span>
+    <h2 class="font-headline text-2xl font-black text-on-surface">Methode 1: Via Instellingen</h2>
+  </div>
+  <p class="text-on-surface-variant font-medium">De makkelijkste manier. Geen bestanden bewerken, geen software installeren.</p>
+
+  <div class="space-y-4">
+    <label class="block text-[10px] font-black uppercase tracking-[0.2em] text-outline">Server URL (kopieer deze)</label>
+    <div class="flex flex-col sm:flex-row gap-4">
+      <div class="flex-grow relative">
+        <input id="mcp-url-display" class="w-full bg-surface-container-low border-2 border-outline-variant/30 py-4 px-6 rounded-xl font-mono text-sm focus:outline-none focus:border-primary transition-colors" readonly type="text" value="${escapeHtml(mcpUrl)}"/>
+        <button onclick="navigator.clipboard.writeText(document.getElementById('mcp-url-display').value)" class="absolute right-4 top-1/2 -translate-y-1/2 text-primary material-symbols-outlined hover:scale-110 transition-transform">content_copy</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <div class="p-4 bg-surface-container-low rounded-xl border border-outline-variant/10">
+      <div class="w-8 h-8 rounded-lg bg-primary flex items-center justify-center text-white font-black mb-3">1</div>
+      <p class="text-sm text-on-surface font-bold mb-1">Open Instellingen</p>
+      <p class="text-xs text-on-surface-variant">Claude Desktop &rarr; Settings &rarr; Connectors (of MCP Servers)</p>
+    </div>
+    <div class="p-4 bg-surface-container-low rounded-xl border border-outline-variant/10">
+      <div class="w-8 h-8 rounded-lg bg-primary flex items-center justify-center text-white font-black mb-3">2</div>
+      <p class="text-sm text-on-surface font-bold mb-1">Voeg Server Toe</p>
+      <p class="text-xs text-on-surface-variant">Klik &ldquo;Add&rdquo; en plak de server URL hierboven</p>
+    </div>
+    <div class="p-4 bg-surface-container-low rounded-xl border border-outline-variant/10">
+      <div class="w-8 h-8 rounded-lg bg-primary flex items-center justify-center text-white font-black mb-3">3</div>
+      <p class="text-sm text-on-surface font-bold mb-1">Login &amp; Klaar</p>
+      <p class="text-xs text-on-surface-variant">Je browser opent voor inloggen. Daarna kun je direct vragen stellen.</p>
+    </div>
+  </div>
+</section>
+
+<!-- Method 2: JSON Config (Alternative) -->
 <section class="grid grid-cols-1 lg:grid-cols-3 gap-8">
   <div class="lg:col-span-2 bg-surface-container-lowest p-8 md:p-10 rounded-3xl border border-outline-variant/30 flex flex-col space-y-8">
     <div>
-      <h2 class="font-headline text-2xl font-black text-on-surface mb-2">Config Instellen</h2>
-      <p class="text-on-surface-variant font-medium">Plak hieronder de inhoud van je <code class="bg-surface-container-high px-2 py-1 rounded text-primary font-mono text-sm">claude_desktop_config.json</code> bestand. Wij voegen de RDW server er automatisch aan toe. Geen extra software nodig &mdash; Claude Desktop verbindt rechtstreeks.</p>
+      <h2 class="font-headline text-2xl font-black text-on-surface mb-2">Methode 2: Via Config Bestand</h2>
+      <p class="text-on-surface-variant font-medium">Alternatief: bewerk het JSON config bestand handmatig. Plak hieronder je huidige config — wij voegen de RDW server er automatisch aan toe.</p>
     </div>
 
     <div class="space-y-3">
@@ -443,44 +480,20 @@ function setupClaudeDesktop(): string {
         </div>
         <div>
           <h4 class="font-bold text-sm text-on-surface mb-0.5">Secure &amp; Private</h4>
-          <p class="text-xs text-on-surface-variant leading-relaxed">OAuth 2.0 authentication via your browser. No API keys needed.</p>
+          <p class="text-xs text-on-surface-variant leading-relaxed">OAuth 2.0 authenticatie via je browser. Geen API-sleutels nodig.</p>
         </div>
       </li>
     </ul>
   </div>
 </section>
 
-<!-- MCP Setup Guide -->
-<section class="space-y-10">
-  <div class="text-center max-w-2xl mx-auto">
-    <h2 class="font-headline text-3xl font-black text-on-surface">MCP Setup Guide</h2>
-    <p class="text-on-surface-variant font-medium mt-2">Deploy your intelligence in minutes with these three steps.</p>
-  </div>
-  <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-    <div class="bg-surface-container-lowest p-8 rounded-3xl border border-outline-variant/30 relative group overflow-hidden">
-      <span class="absolute -right-4 -top-8 text-9xl font-black text-surface-container-low/40 group-hover:text-primary/5 transition-colors">1</span>
-      <div class="relative z-10 space-y-5">
-        <div class="w-10 h-10 rounded-lg bg-primary flex items-center justify-center text-white font-black text-lg">1</div>
-        <h3 class="font-headline text-lg font-bold">Configure Config</h3>
-        <p class="text-sm text-on-surface-variant leading-relaxed">Open your Claude Desktop config file and paste the MCP server configuration provided in the section above.</p>
-      </div>
-    </div>
-    <div class="bg-surface-container-lowest p-8 rounded-3xl border border-outline-variant/30 relative group overflow-hidden">
-      <span class="absolute -right-4 -top-8 text-9xl font-black text-surface-container-low/40 group-hover:text-primary/5 transition-colors">2</span>
-      <div class="relative z-10 space-y-5">
-        <div class="w-10 h-10 rounded-lg bg-primary flex items-center justify-center text-white font-black text-lg">2</div>
-        <h3 class="font-headline text-lg font-bold">Restart Claude</h3>
-        <p class="text-sm text-on-surface-variant leading-relaxed">Completely exit and restart your Claude Desktop application to initialize the new MCP server integration.</p>
-      </div>
-    </div>
-    <div class="bg-surface-container-lowest p-8 rounded-3xl border border-outline-variant/30 relative group overflow-hidden">
-      <span class="absolute -right-4 -top-8 text-9xl font-black text-surface-container-low/40 group-hover:text-primary/5 transition-colors">3</span>
-      <div class="relative z-10 space-y-5">
-        <div class="w-10 h-10 rounded-lg bg-primary flex items-center justify-center text-white font-black text-lg">3</div>
-        <h3 class="font-headline text-lg font-bold">Start Querying</h3>
-        <p class="text-sm text-on-surface-variant leading-relaxed">Your browser will open for login. Then ask Claude about any Dutch license plate, APK status, or vehicle specs.</p>
-      </div>
-    </div>
+<!-- Troubleshooting -->
+<section class="bg-surface-container-low p-8 rounded-3xl border border-outline-variant/30 space-y-4">
+  <h3 class="font-headline text-xl font-black text-on-surface">Problemen?</h3>
+  <div class="space-y-3 text-sm text-on-surface-variant">
+    <p><strong>Methode 1 werkt niet?</strong> Probeer Methode 2 (config bestand). Sommige versies van Claude Desktop ondersteunen nog niet de Connectors-interface.</p>
+    <p><strong>OAuth login opent niet?</strong> Controleer of je browser niet geblokkeerd wordt door een pop-up blocker. Probeer handmatig naar de server URL te navigeren.</p>
+    <p><strong>Andere fout?</strong> Sluit Claude Desktop volledig af (ook via systeemvak/taakbalk) en start opnieuw.</p>
   </div>
 </section>
 

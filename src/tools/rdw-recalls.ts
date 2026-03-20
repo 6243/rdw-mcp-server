@@ -5,7 +5,7 @@
 
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { TerugroepActiesSchema, type TerugroepActiesInput } from "../schemas/rdw-schemas.js";
-import { queryRdw, handleRdwError } from "../services/rdw-client.js";
+import { queryRdw, handleRdwError, soqlEscape } from "../services/rdw-client.js";
 import { DATASETS, BRAND_ALIASES } from "../constants.js";
 import { normalizeKenteken, validateKenteken } from "../services/kenteken-utils.js";
 import { formatRdwDate } from "../services/formatter.js";
@@ -46,6 +46,13 @@ Examples:
     },
     async (params: TerugroepActiesInput) => {
       try {
+        if (!params.merk && !params.kenteken) {
+          return {
+            isError: true,
+            content: [{ type: "text" as const, text: "Geef minstens een 'merk' of 'kenteken' op om terugroepacties te zoeken." }],
+          };
+        }
+
         let searchBrand = params.merk ?? "";
 
         // If kenteken provided, look up the brand first
@@ -96,7 +103,7 @@ Examples:
 
         // Query recalls dataset
         const recalls = await queryRdw<RdwRecallRecord>(DATASETS.RECALLS, {
-          where: `upper(merk)='${normalizedBrand}'`,
+          where: `upper(merk)='${soqlEscape(normalizedBrand)}'`,
           order: "publicatiedatum DESC",
           limit: 50,
         });
@@ -116,7 +123,8 @@ Examples:
         lines.push(`Gevonden: **${recalls.length}** terugroepactie(s)\n`);
 
         for (const recall of recalls) {
-          lines.push(`### ${recall.referentiecode_rdw ?? "?"} — ${recall.omschrijving_defect?.slice(0, 80) ?? "Onbekend defect"}...`);
+          const defectDesc = recall.omschrijving_defect ?? "Onbekend defect";
+          lines.push(`### ${recall.referentiecode_rdw ?? "?"} — ${defectDesc.length > 80 ? defectDesc.slice(0, 80) + "..." : defectDesc}`);
           lines.push(`- **Publicatiedatum**: ${formatRdwDate(recall.publicatiedatum)}`);
           lines.push(`- **Status**: ${recall.status ?? "Onbekend"}`);
           if (recall.gevaar_voor_mens_en_milieu) {

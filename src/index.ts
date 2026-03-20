@@ -163,7 +163,7 @@ async function runHTTP(): Promise<void> {
 
   const bearerAuth = requireBearerAuth({
     verifier: provider,
-    resourceMetadataUrl: `${protocol}://${domain}/.well-known/oauth-protected-resource`,
+    resourceMetadataUrl: `${protocol}://${domain}/.well-known/oauth-protected-resource/mcp`,
   });
 
   // ---------- Stateful session management for SSE support ----------

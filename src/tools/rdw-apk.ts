@@ -67,20 +67,20 @@ Examples:
         }
 
         const v = vehicles[0];
-        const expired = isApkExpired(v.vervaldatum_apk);
         const apkDate = formatRdwDate(v.vervaldatum_apk);
         const firstAdmission = formatRdwDate(v.datum_eerste_toelating);
+        const expired = v.vervaldatum_apk ? isApkExpired(v.vervaldatum_apk) : false;
 
         const lines: string[] = [];
 
-        if (expired) {
-          lines.push("## ❌ APK VERLOPEN");
-          lines.push("");
-          lines.push(`**Let op:** De APK van dit voertuig is verlopen op ${apkDate}. Het voertuig mag niet meer op de openbare weg worden gebruikt zonder geldige APK.`);
-        } else if (!v.vervaldatum_apk) {
+        if (!v.vervaldatum_apk) {
           lines.push("## ℹ️ Geen APK-datum bekend");
           lines.push("");
           lines.push("Er is geen APK-vervaldatum geregistreerd. Dit kan betekenen dat het voertuig nog geen APK-plicht heeft (nieuw voertuig) of dat het is vrijgesteld.");
+        } else if (expired) {
+          lines.push("## ❌ APK VERLOPEN");
+          lines.push("");
+          lines.push(`**Let op:** De APK van dit voertuig is verlopen op ${apkDate}. Het voertuig mag niet meer op de openbare weg worden gebruikt zonder geldige APK.`);
         } else {
           lines.push("## ✅ APK Geldig");
           lines.push("");

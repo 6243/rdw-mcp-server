@@ -43,10 +43,7 @@ export const TerugroepActiesSchema = z.object({
     .string()
     .optional()
     .describe("Kenteken om terugroepacties voor het specifieke voertuigtype op te zoeken. Optioneel als merk is opgegeven."),
-}).strict().refine(
-  (data) => data.merk || data.kenteken,
-  { message: "Geef minstens een 'merk' of 'kenteken' op om terugroepacties te zoeken." }
-);
+}).strict();
 
 export type TerugroepActiesInput = z.infer<typeof TerugroepActiesSchema>;
 

@@ -5,7 +5,7 @@
 
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { MerkZoekenSchema, type MerkZoekenInput } from "../schemas/rdw-schemas.js";
-import { queryRdw, handleRdwError } from "../services/rdw-client.js";
+import { queryRdw, handleRdwError, soqlEscape } from "../services/rdw-client.js";
 import { DATASETS, BRAND_ALIASES, FUEL_ALIASES } from "../constants.js";
 import { vehicleListToMarkdown } from "../services/formatter.js";
 import type { RdwVehicleRecord } from "../types.js";
@@ -49,10 +49,10 @@ Examples:
 
         // Build SODA $where clause
         const conditions: string[] = [];
-        conditions.push(`merk='${brand}'`);
+        conditions.push(`merk='${soqlEscape(brand)}'`);
 
         if (params.model) {
-          conditions.push(`upper(handelsbenaming) like '%${params.model.toUpperCase()}%'`);
+          conditions.push(`upper(handelsbenaming) like '%${soqlEscape(params.model.toUpperCase())}%'`);
         }
 
         if (params.bouwjaar_vanaf) {
@@ -66,7 +66,7 @@ Examples:
         }
 
         if (params.kleur) {
-          conditions.push(`eerste_kleur='${params.kleur.toUpperCase()}'`);
+          conditions.push(`eerste_kleur='${soqlEscape(params.kleur.toUpperCase())}'`);
         }
 
         const whereClause = conditions.join(" AND ");

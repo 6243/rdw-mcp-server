@@ -63,6 +63,16 @@ function releaseSlot(): void {
   }
 }
 
+// ---------- SoQL Helpers ----------
+
+/**
+ * Escape a string for use inside SoQL single-quoted literals.
+ * Prevents query breakage from names containing apostrophes (e.g. O'Brien).
+ */
+export function soqlEscape(value: string): string {
+  return value.replace(/'/g, "''");
+}
+
 // ---------- Public API ----------
 
 export interface SodaQueryParams {

@@ -5,7 +5,7 @@
 
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { SlimZoekenSchema, type SlimZoekenInput } from "../schemas/rdw-schemas.js";
-import { queryRdw, handleRdwError } from "../services/rdw-client.js";
+import { queryRdw, handleRdwError, soqlEscape } from "../services/rdw-client.js";
 import { DATASETS, BRAND_ALIASES, FUEL_ALIASES } from "../constants.js";
 import { vehicleListToMarkdown, isApkExpired } from "../services/formatter.js";
 import type { RdwVehicleRecord } from "../types.js";
@@ -13,6 +13,7 @@ import type { RdwVehicleRecord } from "../types.js";
 interface ParsedQuery {
   conditions: string[];
   description: string[];
+  fuelFilter?: string;
 }
 
 /**
@@ -26,7 +27,7 @@ function parseNaturalQuery(query: string): ParsedQuery {
   // --- Brand detection ---
   for (const [alias, official] of Object.entries(BRAND_ALIASES)) {
     if (lower.includes(alias)) {
-      conditions.push(`merk='${official}'`);
+      conditions.push(`merk='${soqlEscape(official)}'`);
       description.push(`Merk: ${official}`);
       break; // Take first match
     }
@@ -47,7 +48,7 @@ function parseNaturalQuery(query: string): ParsedQuery {
     const match = lower.match(pattern);
     if (match) {
       const model = match[1].toUpperCase();
-      conditions.push(`upper(handelsbenaming) like '%${model}%'`);
+      conditions.push(`upper(handelsbenaming) like '%${soqlEscape(model)}%'`);
       description.push(`Model: ${model}`);
       break;
     }
@@ -96,16 +97,17 @@ function parseNaturalQuery(query: string): ParsedQuery {
   const colors = ["grijs", "zwart", "wit", "blauw", "rood", "groen", "geel", "oranje", "bruin", "zilver", "beige"];
   for (const color of colors) {
     if (lower.includes(color)) {
-      conditions.push(`eerste_kleur='${color.toUpperCase()}'`);
+      conditions.push(`eerste_kleur='${soqlEscape(color.toUpperCase())}'`);
       description.push(`Kleur: ${color.toUpperCase()}`);
       break;
     }
   }
 
   // --- Fuel type detection ---
+  let fuelFilter: string | undefined;
   for (const [alias, official] of Object.entries(FUEL_ALIASES)) {
     if (lower.includes(alias)) {
-      // Fuel is in a separate dataset, we'll note it for post-filtering
+      fuelFilter = official;
       description.push(`Brandstof: ${official}`);
       break;
     }
@@ -138,7 +140,7 @@ function parseNaturalQuery(query: string): ParsedQuery {
     description.push("Taxi: Ja");
   }
 
-  return { conditions, description };
+  return { conditions, description, fuelFilter };
 }
 
 export function registerSlimZoeken(server: McpServer): void {
@@ -180,7 +182,7 @@ Note: Voor een exacte kenteken-zoekopdracht, gebruik rdw_kenteken_zoeken.`,
       try {
         const parsed = parseNaturalQuery(params.query);
 
-        if (parsed.conditions.length === 0) {
+        if (parsed.conditions.length === 0 && !parsed.fuelFilter) {
           return {
             content: [{
               type: "text" as const,
@@ -191,11 +193,38 @@ Note: Voor een exacte kenteken-zoekopdracht, gebruik rdw_kenteken_zoeken.`,
 
         const whereClause = parsed.conditions.join(" AND ");
 
-        const vehicles = await queryRdw<RdwVehicleRecord>(DATASETS.VEHICLES, {
-          where: whereClause,
+        // Over-fetch if we need to post-filter by fuel type
+        const fetchLimit = parsed.fuelFilter ? params.limit * 3 : params.limit;
+        let vehicles = await queryRdw<RdwVehicleRecord>(DATASETS.VEHICLES, {
+          where: whereClause || undefined,
           order: "datum_eerste_toelating DESC",
-          limit: params.limit,
+          limit: fetchLimit,
         });
+
+        // Post-filter by fuel type (fuel data is in a separate dataset)
+        if (parsed.fuelFilter && vehicles.length > 0) {
+          const batchSize = Math.min(vehicles.length, params.limit * 2);
+          const fuelChecks = await Promise.all(
+            vehicles.slice(0, batchSize).map((v) =>
+              queryRdw<Record<string, string>>(DATASETS.FUEL, {
+                filters: { kenteken: v.kenteken },
+                select: "kenteken,brandstof_omschrijving",
+                limit: 1,
+              }).then((f) => ({
+                kenteken: v.kenteken,
+                fuel: f[0]?.brandstof_omschrijving ?? "",
+              }))
+            )
+          );
+          const matchingKentekens = new Set(
+            fuelChecks
+              .filter((f) => f.fuel.toLowerCase().includes(parsed.fuelFilter!.toLowerCase()))
+              .map((f) => f.kenteken)
+          );
+          vehicles = vehicles.filter((v) => matchingKentekens.has(v.kenteken));
+        }
+
+        vehicles = vehicles.slice(0, params.limit);
 
         // Build response
         const lines: string[] = [];
