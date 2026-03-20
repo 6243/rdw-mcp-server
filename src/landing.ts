@@ -133,25 +133,6 @@ function setupClaudeDesktop(): string {
   const protocol = domain.startsWith("localhost") ? "http" : "https";
   const mcpUrl = `${protocol}://${domain}/mcp`;
 
-  // OAuth flow: no API key needed, just mcp-remote with the URL
-  const desktopConfig = JSON.stringify({
-    mcpServers: {
-      rdw: {
-        command: "npx",
-        args: ["-y", "mcp-remote", mcpUrl],
-      },
-    },
-  }, null, 2);
-
-  const desktopConfigWindows = JSON.stringify({
-    mcpServers: {
-      rdw: {
-        command: "npx.cmd",
-        args: ["-y", "mcp-remote", mcpUrl],
-      },
-    },
-  }, null, 2);
-
   return page("Claude Desktop instellen — RDW MCP", `
   <a href="/" class="back-link">&larr; Terug naar overzicht</a>
   <h1>Claude Desktop instellen</h1>
@@ -172,18 +153,33 @@ function setupClaudeDesktop(): string {
         <strong>Open de Claude Desktop instellingen</strong>
         <p>Open Claude Desktop en ga naar:</p>
         <p><strong>Settings</strong> &rarr; <strong>Developer</strong> &rarr; <strong>Edit Config</strong></p>
-        <p>Er opent een bestand genaamd <code>claude_desktop_config.json</code>.</p>
+        <p>Er opent een bestand genaamd <code>claude_desktop_config.json</code>. <strong>Kopieer de volledige inhoud</strong> van dat bestand.</p>
       </div>
     </div>
     <div class="step">
       <span class="step-num">3</span>
       <div>
-        <strong>Plak de configuratie</strong>
-        <p><strong>Windows:</strong> Kopieer en plak dit in het bestand:</p>
-        <div class="code-box copyable" onclick="copyText(this)" title="Klik om te kopiëren">${escapeHtml(desktopConfigWindows)}</div>
-        <p><strong>Mac/Linux:</strong> Gebruik in plaats daarvan deze versie:</p>
-        <div class="code-box copyable" onclick="copyText(this)" title="Klik om te kopiëren">${escapeHtml(desktopConfig)}</div>
-        <div class="info-box">Het verschil is <code>npx.cmd</code> (Windows) vs <code>npx</code> (Mac/Linux). Als je al andere servers hebt staan, voeg dan alleen het <code>"rdw"</code>-blok toe binnen <code>"mcpServers"</code>.</div>
+        <strong>Voeg de RDW server toe</strong>
+        <p>Plak hieronder de inhoud van je config-bestand. Wij voegen de RDW server er automatisch aan toe.</p>
+
+        <div class="config-tool">
+          <div class="os-toggle">
+            <button type="button" class="os-btn active" onclick="setOS('windows')">Windows</button>
+            <button type="button" class="os-btn" onclick="setOS('mac')">Mac / Linux</button>
+          </div>
+
+          <label for="config-input">Plak hier je huidige config (mag ook leeg zijn):</label>
+          <textarea id="config-input" rows="8" placeholder="Plak hier de inhoud van claude_desktop_config.json..."></textarea>
+          <button type="button" class="btn full" onclick="mergeConfig()">Voeg RDW toe</button>
+
+          <div id="config-error" class="error" style="display:none"></div>
+
+          <div id="config-result" style="display:none">
+            <label>Klaar! Kopieer dit en plak het terug in je config-bestand:</label>
+            <div class="code-box copyable" id="config-output" onclick="copyText(this)" title="Klik om te kopiëren"></div>
+            <div class="info-box">De RDW server is toegevoegd. Al je bestaande instellingen blijven behouden.</div>
+          </div>
+        </div>
       </div>
     </div>
     <div class="step">
@@ -206,6 +202,64 @@ function setupClaudeDesktop(): string {
       <li>&ldquo;Zoek alle Tesla&apos;s in de RDW database&rdquo;</li>
     </ul>
   </div>
+
+  <script>
+    var currentOS = 'windows';
+    var mcpUrl = '${mcpUrl}';
+
+    function setOS(os) {
+      currentOS = os;
+      document.querySelectorAll('.os-btn').forEach(function(b) { b.classList.remove('active'); });
+      document.querySelector('.os-btn' + (os === 'windows' ? ':first-child' : ':last-child')).classList.add('active');
+      // Re-run merge if there's already a result showing
+      if (document.getElementById('config-result').style.display !== 'none') {
+        mergeConfig();
+      }
+    }
+
+    function mergeConfig() {
+      var input = document.getElementById('config-input').value.trim();
+      var errorEl = document.getElementById('config-error');
+      var resultEl = document.getElementById('config-result');
+      var outputEl = document.getElementById('config-output');
+
+      errorEl.style.display = 'none';
+      resultEl.style.display = 'none';
+
+      var config;
+      if (!input || input === '') {
+        config = {};
+      } else {
+        try {
+          config = JSON.parse(input);
+        } catch (e) {
+          errorEl.textContent = 'Dit is geen geldige JSON. Kopieer de volledige inhoud van je config-bestand en probeer opnieuw.';
+          errorEl.style.display = 'block';
+          return;
+        }
+      }
+
+      if (typeof config !== 'object' || Array.isArray(config)) {
+        errorEl.textContent = 'De config moet een JSON object zijn (begint met { en eindigt met }).';
+        errorEl.style.display = 'block';
+        return;
+      }
+
+      // Ensure mcpServers exists
+      if (!config.mcpServers || typeof config.mcpServers !== 'object') {
+        config.mcpServers = {};
+      }
+
+      // Add rdw server
+      config.mcpServers.rdw = {
+        command: currentOS === 'windows' ? 'npx.cmd' : 'npx',
+        args: ['-y', 'mcp-remote', mcpUrl]
+      };
+
+      outputEl.textContent = JSON.stringify(config, null, 2);
+      resultEl.style.display = 'block';
+    }
+  </script>
   `);
 }
 
@@ -531,6 +585,19 @@ const CSS = `
   .examples{list-style:none;padding:0;margin-top:.5rem}
   .examples li{padding:.4rem 0;color:#555;font-size:.9rem}
   .examples li:before{content:"💬 ";margin-right:.3rem}
+
+  /* Config merger tool */
+  .config-tool{margin-top:.8rem}
+  .os-toggle{display:flex;gap:0;margin-bottom:1rem;border:2px solid #e2e8f0;border-radius:8px;
+             overflow:hidden;width:fit-content}
+  .os-btn{padding:.5rem 1.2rem;background:#f8fafc;border:none;font-size:.9rem;font-weight:600;
+          cursor:pointer;color:#6b7280;transition:background .2s,color .2s}
+  .os-btn.active{background:#2563eb;color:#fff}
+  .os-btn:hover:not(.active){background:#f1f5f9}
+  textarea{width:100%;padding:.7rem .9rem;border:1px solid #d1d5db;border-radius:8px;
+           font-family:"SFMono-Regular",Consolas,"Liberation Mono",Menlo,monospace;
+           font-size:.82rem;resize:vertical;margin-bottom:.8rem;min-height:120px}
+  textarea:focus{outline:none;border-color:#2563eb;box-shadow:0 0 0 3px rgba(37,99,235,.1)}
 
   @media(max-width:600px){
     .features{grid-template-columns:1fr}
