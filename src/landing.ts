@@ -186,24 +186,24 @@ function landingPage(): string {
   <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
     <div class="bg-surface-container-lowest p-8 rounded-xl shadow-sm border border-outline-variant/15 flex flex-col items-start hover:translate-y-[-4px] transition-transform">
       <div class="w-12 h-12 bg-primary-fixed rounded-lg flex items-center justify-center mb-6">
-        <span class="material-symbols-outlined text-primary text-3xl">search</span>
+        <span class="material-symbols-outlined text-primary text-3xl">auto_fix_high</span>
       </div>
-      <h3 class="font-headline text-xl font-bold mb-3">Kenteken opzoeken</h3>
-      <p class="text-on-surface-variant text-sm leading-relaxed mb-6">Haal direct alle technische specificaties op van elk Nederlands geregistreerd voertuig via onze API.</p>
+      <h3 class="font-headline text-xl font-bold mb-3">Automatische Verkoop &amp; Offertes</h3>
+      <p class="text-on-surface-variant text-sm leading-relaxed mb-6">Laat je AI-model ruwe RDW-specificaties direct omzetten in wervende verkoopteksten voor advertenties, of in glasheldere reparatie-offertes. Geen handmatig knip- en plakwerk meer.</p>
     </div>
     <div class="bg-surface-container-lowest p-8 rounded-xl shadow-sm border border-outline-variant/15 flex flex-col items-start hover:translate-y-[-4px] transition-transform">
       <div class="w-12 h-12 bg-tertiary-fixed rounded-lg flex items-center justify-center mb-6">
-        <span class="material-symbols-outlined text-tertiary text-3xl">verified</span>
+        <span class="material-symbols-outlined text-tertiary text-3xl">fleet_management</span>
       </div>
-      <h3 class="font-headline text-xl font-bold mb-3">APK-status</h3>
-      <p class="text-on-surface-variant text-sm leading-relaxed mb-6">Real-time controle op vervaldata en keuringsrapporten. Ideaal voor fleet management en garages.</p>
+      <h3 class="font-headline text-xl font-bold mb-3">Wagenpark &amp; Milieuzone-analyse</h3>
+      <p class="text-on-surface-variant text-sm leading-relaxed mb-6">Laat je AI in &eacute;&eacute;n prompt controleren of voertuigen voldoen aan emissie-eisen (zero-emissiezones), wanneer de APK verloopt, en identificeer risicovoertuigen in je vloot.</p>
     </div>
     <div class="bg-surface-container-lowest p-8 rounded-xl shadow-sm border border-outline-variant/15 flex flex-col items-start hover:translate-y-[-4px] transition-transform">
-      <div class="w-12 h-12 bg-error-container rounded-lg flex items-center justify-center mb-6">
-        <span class="material-symbols-outlined text-error text-3xl">warning</span>
+      <div class="w-12 h-12 bg-secondary-container rounded-lg flex items-center justify-center mb-6">
+        <span class="material-symbols-outlined text-secondary text-3xl">extension</span>
       </div>
-      <h3 class="font-headline text-xl font-bold mb-3">Terugroepacties</h3>
-      <p class="text-on-surface-variant text-sm leading-relaxed mb-6">Directe toegang tot het terugroepregister van de RDW. Mis nooit meer een kritieke veiligheidswaarschuwing.</p>
+      <h3 class="font-headline text-xl font-bold mb-3">Plug &amp; Play voor AI-Agents</h3>
+      <p class="text-on-surface-variant text-sm leading-relaxed mb-6">Geef jouw custom AI-assistenten via MCP direct real-time toegang tot RDW-data. Ontworpen voor naadloze integratie met LLM&apos;s zoals Claude, zonder complexe API-bouw.</p>
     </div>
   </div>
 </section>
