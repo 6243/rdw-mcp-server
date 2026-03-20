@@ -11,6 +11,7 @@ import type { OAuthServerProvider, AuthorizationParams } from "@modelcontextprot
 import type { OAuthRegisteredClientsStore } from "@modelcontextprotocol/sdk/server/auth/clients.js";
 import type { OAuthClientInformationFull, OAuthTokens } from "@modelcontextprotocol/sdk/shared/auth.js";
 import type { AuthInfo } from "@modelcontextprotocol/sdk/server/auth/types.js";
+import { InvalidTokenError, InvalidGrantError } from "@modelcontextprotocol/sdk/server/auth/errors.js";
 import {
   getOAuthClient,
   storeOAuthClient,
@@ -124,7 +125,7 @@ export class RdwOAuthProvider implements OAuthServerProvider {
   ): Promise<string> {
     const row = getAuthCode(authorizationCode);
     if (!row || row.expires_at < Date.now()) {
-      throw new Error("Invalid or expired authorization code");
+      throw new InvalidGrantError("Invalid or expired authorization code");
     }
     return row.code_challenge;
   }
@@ -138,10 +139,10 @@ export class RdwOAuthProvider implements OAuthServerProvider {
   ): Promise<OAuthTokens> {
     const row = getAuthCode(authorizationCode);
     if (!row || row.expires_at < Date.now()) {
-      throw new Error("Invalid or expired authorization code");
+      throw new InvalidGrantError("Invalid or expired authorization code");
     }
     if (row.client_id !== client.client_id) {
-      throw new Error("Authorization code was not issued to this client");
+      throw new InvalidGrantError("Authorization code was not issued to this client");
     }
 
     deleteAuthCode(authorizationCode);
@@ -178,7 +179,7 @@ export class RdwOAuthProvider implements OAuthServerProvider {
   async verifyAccessToken(token: string): Promise<AuthInfo> {
     const row = getAccessToken(token);
     if (!row || row.expires_at < Date.now()) {
-      throw new Error("Invalid or expired access token");
+      throw new InvalidTokenError("Invalid or expired access token");
     }
 
     return {
