@@ -58,74 +58,289 @@ export function landingRouter(): Router {
 // ---------- Pages ----------
 
 function landingPage(): string {
-  return page("RDW MCP — Vraag je AI alles over voertuigdata", `
-  <div class="hero">
-    <div class="hero-badge">Open source &middot; Gratis</div>
-    <h1>RDW Voertuigdata voor je AI</h1>
-    <p class="hero-sub">Stel vragen over kentekens, APK-status, terugroepacties en meer — direct vanuit je favoriete AI-app.</p>
-  </div>
+  return `<!DOCTYPE html>
+<html class="light" lang="nl"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>RDW Voertuigdata — MCP Server voor je AI</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script>
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "tertiary-fixed-dim": "#4edea3",
+              "inverse-on-surface": "#ebf1ff",
+              "on-primary-container": "#eeefff",
+              "on-tertiary": "#ffffff",
+              "inverse-surface": "#2a313d",
+              "secondary-container": "#e2e0fc",
+              "tertiary-fixed": "#6ffbbe",
+              "tertiary-container": "#007d55",
+              "outline": "#737686",
+              "surface-container-highest": "#dce2f3",
+              "on-surface": "#151c27",
+              "error-container": "#ffdad6",
+              "on-primary-fixed-variant": "#003ea8",
+              "on-secondary-fixed": "#1a1a2e",
+              "error": "#ba1a1a",
+              "primary-fixed": "#dbe1ff",
+              "outline-variant": "#c3c6d7",
+              "on-tertiary-fixed": "#002113",
+              "surface-variant": "#dce2f3",
+              "on-error-container": "#93000a",
+              "on-tertiary-fixed-variant": "#005236",
+              "surface": "#f9f9ff",
+              "on-background": "#151c27",
+              "surface-bright": "#f9f9ff",
+              "on-tertiary-container": "#bdffdb",
+              "inverse-primary": "#b4c5ff",
+              "surface-container-low": "#f0f3ff",
+              "surface-container-lowest": "#ffffff",
+              "secondary-fixed-dim": "#c6c4df",
+              "on-secondary-container": "#63627a",
+              "surface-container-high": "#e2e8f8",
+              "on-secondary-fixed-variant": "#45455b",
+              "secondary": "#5d5c74",
+              "on-primary-fixed": "#00174b",
+              "surface-container": "#e7eefe",
+              "on-error": "#ffffff",
+              "primary-fixed-dim": "#b4c5ff",
+              "surface-dim": "#d3daea",
+              "tertiary": "#006242",
+              "primary-container": "#2563eb",
+              "background": "#f9f9ff",
+              "on-surface-variant": "#434655",
+              "on-secondary": "#ffffff",
+              "surface-tint": "#0053db",
+              "secondary-fixed": "#e2e0fc",
+              "primary": "#004ac6",
+              "on-primary": "#ffffff"
+            },
+            fontFamily: {
+              "headline": ["Manrope"],
+              "body": ["Inter"],
+              "label": ["Inter"]
+            },
+            borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+          },
+        },
+      }
+</script>
+<style>
+    .material-symbols-outlined {
+        font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    }
+    .tonal-layering {
+        background: linear-gradient(135deg, #004ac6 0%, #2563eb 100%);
+    }
+    .faq-answer { display: none; }
+    .faq-item.open .faq-answer { display: block; }
+    .faq-item.open .faq-icon { transform: rotate(180deg); }
+    .faq-icon { transition: transform 0.2s; }
+</style>
+</head>
+<body class="bg-surface font-body text-on-surface antialiased">
 
-  <div class="features">
-    <div class="feature-card">
-      <div class="feature-icon">🔍</div>
-      <h3>Kenteken opzoeken</h3>
-      <p>&ldquo;Wat voor auto is AB-123-C?&rdquo;</p>
-    </div>
-    <div class="feature-card">
-      <div class="feature-icon">✅</div>
-      <h3>APK-status</h3>
-      <p>&ldquo;Is de APK van mijn auto nog geldig?&rdquo;</p>
-    </div>
-    <div class="feature-card">
-      <div class="feature-icon">⚠️</div>
-      <h3>Terugroepacties</h3>
-      <p>&ldquo;Zijn er recalls voor mijn auto?&rdquo;</p>
+<!-- Top Navigation Bar -->
+<header class="fixed top-0 z-50 w-full bg-[#f9f9ff] shadow-sm">
+<nav class="flex justify-between items-center w-full px-8 py-4 max-w-7xl mx-auto">
+  <div class="flex items-center gap-8">
+    <span class="text-xl font-extrabold text-[#1A1A2E] font-headline tracking-tight">RDW Voertuigdata</span>
+    <div class="hidden md:flex gap-6 items-center">
+      <a class="font-headline font-bold text-[#2563EB] border-b-2 border-[#2563EB] pb-1 text-sm" href="#">Vehicle Check</a>
+      <a class="font-headline font-bold text-[#737686] hover:text-[#1A1A2E] transition-colors duration-200 text-sm" href="#ai-platforms">AI Integration</a>
+      <a class="font-headline font-bold text-[#737686] hover:text-[#1A1A2E] transition-colors duration-200 text-sm" href="#faq">FAQ</a>
     </div>
   </div>
+  <div class="flex items-center gap-4">
+    <a href="/signup?platform=chatgpt" class="bg-primary-container text-white px-6 py-2.5 rounded-lg font-bold text-sm shadow-sm hover:opacity-90 active:scale-95 transition-all no-underline">Get Started</a>
+  </div>
+</nav>
+</header>
 
-  <div class="section">
-    <h2>Kies je AI-app om te beginnen</h2>
-    <p class="section-sub">Klik op de app die je gebruikt. We helpen je stap voor stap.</p>
-    <div class="platform-grid">
-      <a href="/setup/claude-desktop" class="platform-card">
-        <div class="platform-name">Claude Desktop</div>
-        <div class="platform-desc">Desktop app van Anthropic</div>
-        <div class="platform-tag easy">Makkelijkst</div>
-      </a>
-      <a href="/setup/chatgpt" class="platform-card">
-        <div class="platform-name">ChatGPT</div>
-        <div class="platform-desc">OpenAI&apos;s chat interface</div>
-        <div class="platform-tag">Plus/Team vereist</div>
-      </a>
-      <div class="platform-card disabled">
-        <div class="platform-name">Gemini</div>
-        <div class="platform-desc">Google AI Studio</div>
-        <div class="platform-tag">Nog niet ondersteund</div>
+<main class="pt-24">
+<!-- Hero Section -->
+<section class="max-w-7xl mx-auto px-8 py-20 text-center">
+  <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-surface-container-low mb-6">
+    <span class="text-xs font-bold text-primary tracking-widest uppercase">Model Context Protocol</span>
+    <span class="w-1.5 h-1.5 rounded-full bg-tertiary"></span>
+  </div>
+  <h1 class="font-headline text-5xl md:text-7xl font-extrabold text-on-surface tracking-tight mb-6 max-w-4xl mx-auto leading-tight">
+    RDW Voertuigdata <span class="text-primary italic">voor je AI</span>
+  </h1>
+  <p class="text-on-surface-variant text-lg md:text-xl max-w-2xl mx-auto mb-10 leading-relaxed">
+    Integreer offici&euml;le Nederlandse voertuiggegevens direct in je favoriete AI-modellen. Snellere checks, nauwkeurigere analyses, volledige automatisering.
+  </p>
+  <div class="flex flex-col sm:flex-row justify-center gap-4">
+    <a href="#ai-platforms" class="tonal-layering text-white px-8 py-4 rounded-xl font-bold text-lg shadow-xl hover:shadow-2xl transition-all no-underline">Start Gratis Integratie</a>
+    <a href="https://github.com/dfranklinau/rdw-mcp-server" target="_blank" class="bg-surface-container-highest text-on-surface px-8 py-4 rounded-xl font-bold text-lg hover:bg-surface-container-high transition-all no-underline">Bekijk Documentatie</a>
+  </div>
+</section>
+
+<!-- Core Tools Bento Grid -->
+<section class="max-w-7xl mx-auto px-8 py-16">
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+    <div class="bg-surface-container-lowest p-8 rounded-xl shadow-sm border border-outline-variant/15 flex flex-col items-start hover:translate-y-[-4px] transition-transform">
+      <div class="w-12 h-12 bg-primary-fixed rounded-lg flex items-center justify-center mb-6">
+        <span class="material-symbols-outlined text-primary text-3xl">search</span>
       </div>
-      <a href="/setup/claude-code" class="platform-card">
-        <div class="platform-name">Claude Code</div>
-        <div class="platform-desc">CLI voor developers</div>
-        <div class="platform-tag dev">Developers</div>
-      </a>
+      <h3 class="font-headline text-xl font-bold mb-3">Kenteken opzoeken</h3>
+      <p class="text-on-surface-variant text-sm leading-relaxed mb-6">Haal direct alle technische specificaties op van elk Nederlands geregistreerd voertuig via onze API.</p>
+    </div>
+    <div class="bg-surface-container-lowest p-8 rounded-xl shadow-sm border border-outline-variant/15 flex flex-col items-start hover:translate-y-[-4px] transition-transform">
+      <div class="w-12 h-12 bg-tertiary-fixed rounded-lg flex items-center justify-center mb-6">
+        <span class="material-symbols-outlined text-tertiary text-3xl">verified</span>
+      </div>
+      <h3 class="font-headline text-xl font-bold mb-3">APK-status</h3>
+      <p class="text-on-surface-variant text-sm leading-relaxed mb-6">Real-time controle op vervaldata en keuringsrapporten. Ideaal voor fleet management en garages.</p>
+    </div>
+    <div class="bg-surface-container-lowest p-8 rounded-xl shadow-sm border border-outline-variant/15 flex flex-col items-start hover:translate-y-[-4px] transition-transform">
+      <div class="w-12 h-12 bg-error-container rounded-lg flex items-center justify-center mb-6">
+        <span class="material-symbols-outlined text-error text-3xl">warning</span>
+      </div>
+      <h3 class="font-headline text-xl font-bold mb-3">Terugroepacties</h3>
+      <p class="text-on-surface-variant text-sm leading-relaxed mb-6">Directe toegang tot het terugroepregister van de RDW. Mis nooit meer een kritieke veiligheidswaarschuwing.</p>
     </div>
   </div>
+</section>
 
-  <div class="section faq">
-    <h2>Veelgestelde vragen</h2>
-    <details>
-      <summary>Wat is een MCP server?</summary>
-      <p>MCP (Model Context Protocol) is een manier om AI-apps extra mogelijkheden te geven. Deze server geeft je AI toegang tot de officiële RDW-database met voertuiggegevens.</p>
-    </details>
-    <details>
-      <summary>Is het gratis?</summary>
-      <p>Ja, deze server is volledig gratis. De RDW voertuigdata is openbaar beschikbaar — wij maken het alleen makkelijk om die data vanuit je AI te gebruiken.</p>
-    </details>
-    <details>
-      <summary>Welke gegevens worden opgeslagen?</summary>
-      <p>Alleen je e-mailadres (als je dat invult voor ChatGPT/Gemini). Er worden geen voertuiggegevens of zoekopdrachten opgeslagen.</p>
-    </details>
+<!-- AI App Selection -->
+<section id="ai-platforms" class="bg-surface-container-low py-20 px-8">
+  <div class="max-w-7xl mx-auto">
+    <div class="mb-12">
+      <h2 class="font-headline text-3xl font-extrabold mb-4">Kies je AI platform</h2>
+      <p class="text-on-surface-variant">Activeer onze MCP server op jouw favoriete omgeving.</p>
+    </div>
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <a href="/setup/claude-desktop" class="bg-surface-container-lowest p-6 rounded-xl border border-outline-variant/10 group cursor-pointer hover:bg-white transition-all no-underline text-inherit">
+        <div class="flex justify-between items-start mb-6">
+          <div class="w-14 h-14 bg-surface-container rounded-lg flex items-center justify-center">
+            <span class="material-symbols-outlined text-on-surface-variant text-3xl">desktop_windows</span>
+          </div>
+          <span class="px-3 py-1 rounded-full bg-tertiary-container text-on-tertiary-container text-[10px] font-bold uppercase tracking-wider">Makkelijkst</span>
+        </div>
+        <h4 class="font-headline font-bold text-lg mb-1">Claude Desktop</h4>
+        <p class="text-xs text-on-surface-variant">Directe integratie via config.json</p>
+      </a>
+      <a href="/setup/chatgpt" class="bg-surface-container-lowest p-6 rounded-xl border border-outline-variant/10 group cursor-pointer hover:bg-white transition-all no-underline text-inherit">
+        <div class="flex justify-between items-start mb-6">
+          <div class="w-14 h-14 bg-surface-container rounded-lg flex items-center justify-center">
+            <span class="material-symbols-outlined text-on-surface-variant text-3xl">chat_bubble</span>
+          </div>
+          <span class="px-3 py-1 rounded-full bg-primary-fixed text-on-primary-fixed-variant text-[10px] font-bold uppercase tracking-wider">Plus/Team vereist</span>
+        </div>
+        <h4 class="font-headline font-bold text-lg mb-1">ChatGPT</h4>
+        <p class="text-xs text-on-surface-variant">Via Custom GPT of API connectors</p>
+      </a>
+      <a href="/setup/claude-code" class="bg-surface-container-lowest p-6 rounded-xl border border-outline-variant/10 group cursor-pointer hover:bg-white transition-all no-underline text-inherit">
+        <div class="flex justify-between items-start mb-6">
+          <div class="w-14 h-14 bg-surface-container rounded-lg flex items-center justify-center">
+            <span class="material-symbols-outlined text-on-surface-variant text-3xl">code</span>
+          </div>
+          <span class="px-3 py-1 rounded-full bg-secondary-container text-on-secondary-fixed-variant text-[10px] font-bold uppercase tracking-wider">Developers</span>
+        </div>
+        <h4 class="font-headline font-bold text-lg mb-1">Claude Code</h4>
+        <p class="text-xs text-on-surface-variant">Command-line interface tools</p>
+      </a>
+      <div class="bg-surface-container-lowest p-6 rounded-xl border border-outline-variant/10 opacity-70">
+        <div class="flex justify-between items-start mb-6">
+          <div class="w-14 h-14 bg-surface-container rounded-lg flex items-center justify-center">
+            <span class="material-symbols-outlined text-on-surface-variant text-3xl">diamond</span>
+          </div>
+          <span class="px-3 py-1 rounded-full bg-surface-container-highest text-outline text-[10px] font-bold uppercase tracking-wider">Binnenkort</span>
+        </div>
+        <h4 class="font-headline font-bold text-lg mb-1 text-outline">Gemini</h4>
+        <p class="text-xs text-outline">Nog niet ondersteund</p>
+      </div>
+    </div>
   </div>
-  `);
+</section>
+
+<!-- FAQ Section -->
+<section id="faq" class="max-w-3xl mx-auto px-8 py-24">
+  <h2 class="font-headline text-3xl font-extrabold text-center mb-12">Veelgestelde vragen</h2>
+  <div class="space-y-4">
+    <div class="faq-item open bg-surface-container-lowest rounded-xl p-6 border-l-4 border-primary shadow-sm cursor-pointer" onclick="toggleFaq(this)">
+      <button class="flex justify-between items-center w-full text-left">
+        <span class="font-headline font-bold">Wat is een MCP server?</span>
+        <span class="material-symbols-outlined text-primary faq-icon">expand_more</span>
+      </button>
+      <div class="faq-answer mt-4 text-on-surface-variant text-sm leading-relaxed">
+        Model Context Protocol (MCP) is een open standaard waarmee AI-modellen veilig toegang krijgen tot externe databronnen. Deze server geeft je AI toegang tot de offici&euml;le RDW-database met voertuiggegevens.
+      </div>
+    </div>
+    <div class="faq-item bg-surface-container-low rounded-xl p-6 transition-all hover:bg-surface-container cursor-pointer" onclick="toggleFaq(this)">
+      <button class="flex justify-between items-center w-full text-left">
+        <span class="font-headline font-bold">Is het gratis?</span>
+        <span class="material-symbols-outlined text-outline faq-icon">expand_more</span>
+      </button>
+      <div class="faq-answer mt-4 text-on-surface-variant text-sm leading-relaxed">
+        Ja, deze server is volledig gratis. De RDW voertuigdata is openbaar beschikbaar &mdash; wij maken het alleen makkelijk om die data vanuit je AI te gebruiken.
+      </div>
+    </div>
+    <div class="faq-item bg-surface-container-low rounded-xl p-6 transition-all hover:bg-surface-container cursor-pointer" onclick="toggleFaq(this)">
+      <button class="flex justify-between items-center w-full text-left">
+        <span class="font-headline font-bold">Welke gegevens worden opgeslagen?</span>
+        <span class="material-symbols-outlined text-outline faq-icon">expand_more</span>
+      </button>
+      <div class="faq-answer mt-4 text-on-surface-variant text-sm leading-relaxed">
+        Alleen je e-mailadres (als je dat invult voor ChatGPT). Er worden geen voertuiggegevens of zoekopdrachten opgeslagen.
+      </div>
+    </div>
+  </div>
+</section>
+</main>
+
+<!-- Footer -->
+<footer class="bg-[#1A1A2E] text-white pt-20 pb-12 px-8">
+  <div class="max-w-7xl mx-auto">
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-12 mb-16">
+      <div>
+        <span class="font-headline font-black text-2xl block mb-6">RDW Voertuigdata</span>
+        <p class="text-[#737686] text-xs leading-loose">Open source MCP server. Gebouwd voor moderne AI-workflows.</p>
+      </div>
+      <div>
+        <h5 class="font-headline text-xs font-bold uppercase tracking-widest text-primary-fixed mb-6">Product</h5>
+        <ul class="space-y-4 text-xs font-label uppercase tracking-widest text-[#737686] list-none">
+          <li><a class="hover:text-white transition-all no-underline" href="#ai-platforms">AI Integration</a></li>
+          <li><a class="hover:text-white transition-all no-underline" href="#faq">FAQ</a></li>
+        </ul>
+      </div>
+      <div>
+        <h5 class="font-headline text-xs font-bold uppercase tracking-widest text-primary-fixed mb-6">Legal</h5>
+        <ul class="space-y-4 text-xs font-label uppercase tracking-widest text-[#737686] list-none">
+          <li><a class="hover:text-white transition-all no-underline" href="#">Privacy Policy</a></li>
+          <li><a class="hover:text-white transition-all no-underline" href="#">Terms of Service</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="pt-8 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-4">
+      <p class="font-label text-[10px] uppercase tracking-widest text-[#737686]">&copy; 2025 RDW Voertuigdata MCP Server</p>
+    </div>
+  </div>
+</footer>
+
+<script>
+function toggleFaq(el) {
+  el.classList.toggle('open');
+  if (el.classList.contains('open')) {
+    el.classList.remove('bg-surface-container-low');
+    el.classList.add('bg-surface-container-lowest', 'border-l-4', 'border-primary', 'shadow-sm');
+    el.querySelector('.material-symbols-outlined').classList.remove('text-outline');
+    el.querySelector('.material-symbols-outlined').classList.add('text-primary');
+  } else {
+    el.classList.add('bg-surface-container-low');
+    el.classList.remove('bg-surface-container-lowest', 'border-l-4', 'border-primary', 'shadow-sm');
+    el.querySelector('.material-symbols-outlined').classList.add('text-outline');
+    el.querySelector('.material-symbols-outlined').classList.remove('text-primary');
+  }
+}
+</script>
+</body></html>`;
 }
 
 function setupClaudeDesktop(): string {
