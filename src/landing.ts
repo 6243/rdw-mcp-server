@@ -411,7 +411,12 @@ function setupClaudeDesktop(): string {
   <div class="lg:col-span-2 bg-surface-container-lowest p-8 md:p-10 rounded-3xl border border-outline-variant/30 flex flex-col space-y-8">
     <div>
       <h2 class="font-headline text-2xl font-black text-on-surface mb-2">Methode 2: Via Config Bestand</h2>
-      <p class="text-on-surface-variant font-medium">Alternatief: bewerk het JSON config bestand handmatig. Plak hieronder je huidige config — wij voegen de RDW server er automatisch aan toe.</p>
+      <p class="text-on-surface-variant font-medium">Alternatief voor als Connectors niet beschikbaar is. Vereist <a href="https://nodejs.org" target="_blank" class="text-primary font-bold">Node.js</a> (voor de mcp-remote bridge). Plak hieronder je huidige config &mdash; wij voegen de RDW server er automatisch aan toe.</p>
+    </div>
+
+    <div class="flex gap-2">
+      <button type="button" id="os-windows" onclick="setOS('windows')" class="px-4 py-2 rounded-lg text-sm font-bold bg-primary text-white transition-all">Windows</button>
+      <button type="button" id="os-mac" onclick="setOS('mac')" class="px-4 py-2 rounded-lg text-sm font-bold bg-surface-container-highest text-on-surface-variant hover:bg-surface-container-high transition-all">Mac / Linux</button>
     </div>
 
     <div class="space-y-3">
@@ -448,8 +453,8 @@ function setupClaudeDesktop(): string {
         </div>
       </div>
       <div class="space-y-1 pl-10">
-        <p class="text-on-surface text-xs font-bold">Windows: %AppData%\\Claude\\claude_desktop_config.json</p>
-        <p class="text-on-surface text-xs font-bold">Mac: ~/Library/Application Support/Claude/claude_desktop_config.json</p>
+        <p id="path-text-win" class="text-on-surface text-xs font-bold">Windows: %AppData%\\Claude\\claude_desktop_config.json</p>
+        <p id="path-text-mac" class="text-on-surface text-xs font-bold" style="display:none">Mac: ~/Library/Application Support/Claude/claude_desktop_config.json</p>
       </div>
     </div>
   </div>
@@ -491,14 +496,38 @@ function setupClaudeDesktop(): string {
 <section class="bg-surface-container-low p-8 rounded-3xl border border-outline-variant/30 space-y-4">
   <h3 class="font-headline text-xl font-black text-on-surface">Problemen?</h3>
   <div class="space-y-3 text-sm text-on-surface-variant">
-    <p><strong>Methode 1 werkt niet?</strong> Probeer Methode 2 (config bestand). Sommige versies van Claude Desktop ondersteunen nog niet de Connectors-interface.</p>
-    <p><strong>OAuth login opent niet?</strong> Controleer of je browser niet geblokkeerd wordt door een pop-up blocker. Probeer handmatig naar de server URL te navigeren.</p>
-    <p><strong>Andere fout?</strong> Sluit Claude Desktop volledig af (ook via systeemvak/taakbalk) en start opnieuw.</p>
+    <p><strong>Methode 1 werkt niet?</strong> Probeer Methode 2 (config bestand). Niet alle versies van Claude Desktop hebben de Connectors-interface.</p>
+    <p><strong>OAuth login opent niet?</strong> Controleer of je browser niet geblokkeerd wordt door een pop-up blocker.</p>
+    <p><strong>Poort-fout (EADDRINUSE)?</strong> Dit kan voorkomen bij Methode 2. Sluit Claude Desktop volledig af, open Taakbeheer (Ctrl+Shift+Esc), zoek alle <code class="bg-surface-container-high px-1 rounded font-mono">node.exe</code> processen en be&euml;indig deze. Start Claude Desktop daarna opnieuw.</p>
+    <p><strong>Methode 2 blijft falen?</strong> Schakel over naar Methode 1 (Connectors). Dit is betrouwbaarder omdat er geen lokale proxy nodig is.</p>
   </div>
 </section>
 
 <script>
+var currentOS = 'windows';
 var mcpUrl = '${mcpUrl}';
+
+function setOS(os) {
+  currentOS = os;
+  var winBtn = document.getElementById('os-windows');
+  var macBtn = document.getElementById('os-mac');
+  var pathWin = document.getElementById('path-text-win');
+  var pathMac = document.getElementById('path-text-mac');
+  if (os === 'windows') {
+    winBtn.className = 'px-4 py-2 rounded-lg text-sm font-bold bg-primary text-white transition-all';
+    macBtn.className = 'px-4 py-2 rounded-lg text-sm font-bold bg-surface-container-highest text-on-surface-variant hover:bg-surface-container-high transition-all';
+    pathWin.style.display = 'block';
+    pathMac.style.display = 'none';
+  } else {
+    macBtn.className = 'px-4 py-2 rounded-lg text-sm font-bold bg-primary text-white transition-all';
+    winBtn.className = 'px-4 py-2 rounded-lg text-sm font-bold bg-surface-container-highest text-on-surface-variant hover:bg-surface-container-high transition-all';
+    pathWin.style.display = 'none';
+    pathMac.style.display = 'block';
+  }
+  if (document.getElementById('config-result').style.display !== 'none') {
+    mergeConfig();
+  }
+}
 
 function mergeConfig() {
   var input = document.getElementById('config-input').value.trim();
@@ -533,7 +562,8 @@ function mergeConfig() {
   }
 
   config.mcpServers.rdw = {
-    url: mcpUrl
+    command: currentOS === 'windows' ? 'npx.cmd' : 'npx',
+    args: ['-y', 'mcp-remote', mcpUrl]
   };
 
   outputEl.textContent = JSON.stringify(config, null, 2);
